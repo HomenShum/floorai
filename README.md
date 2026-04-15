@@ -51,24 +51,35 @@ golden_dataset.json
 
 ## Demo Collateral
 
-The repo now includes updated presentation and demo-video assets that match the current product, not the older prototype framing.
+### Demo Video
+
+<video src="https://github.com/HomenShum/floorai/raw/master/video/out/FloorAIDemo.mp4" controls width="100%"></video>
+
+> Built with [Remotion](https://www.remotion.dev/) — source at [video/src](video/src). Run `npm run video:studio` to edit, `npm run video:render` to rebuild.
+
+### Presentation Slides
+
+**Slide 1 — Product overview and operator personas**
+
+![Slide 1 — Product overview](docs/images/slide-1.png)
+
+**Slide 2 — Architecture and evaluation pipeline**
+
+![Slide 2 — Architecture and evaluation](docs/images/slide-2.png)
+
+**Slide 3 — Design tradeoffs and next steps**
+
+![Slide 3 — Design tradeoffs](docs/images/slide-3.png)
+
+> Interactive deck: [slides/presentation.html](slides/presentation.html)
+
+### Asset index
 
 | Asset | Path | What it is for |
 | --- | --- | --- |
 | Interview slide deck | [slides/presentation.html](slides/presentation.html) | Three-slide pitch deck for the live interview |
 | Remotion source | [video/src](video/src) | Editable source for the narrated product demo |
 | Rendered video | [video/out/FloorAIDemo.mp4](video/out/FloorAIDemo.mp4) | Shareable walkthrough video |
-
-```text
-COLLATERAL FLOW
----------------
-slides/presentation.html
-  -> live interview deck
-
-video/src/*
-  -> remotion composition
-  -> video/out/FloorAIDemo.mp4
-```
 
 ## Why This Design
 
@@ -904,209 +915,112 @@ The main next steps for a real deployment would be:
 - monitor new issue themes and append reviewed deltas into the graph instead of rebuilding it blindly
 - add deployment gates based on eval regression thresholds
 
-## Production Roadmap — GraphRAG, Continuous Evaluation, and Monitoring
+## Production Roadmap: GraphRAG, Curated Goldens, and Incremental Updates
 
-This section documents the production architecture discussed during the technical interview. It covers where the system would go after the prototype stage, with concrete technical approaches for knowledge management, evaluation, and observability.
-
-### Regional variability and context-aware retrieval
-
-Different stores face fundamentally different issue profiles. A store in the Southwest dealing with HVAC failures during summer heat has a completely different operational context from a Northeast store managing winter staffing shortages. Population density, seasonal weather, and supply chain geography all shape which issues surface and how they should be resolved.
-
-This is why the current prototype scopes evidence retrieval by store context and why the regional manager view synthesizes cross-store patterns rather than treating each store identically. In production, this variability argues against a single flat retrieval model and toward a structured knowledge graph where geographic, seasonal, and supply-chain relationships are explicit edges, not implicit in embedding space.
-
-### 1. GraphRAG with Neo4j for production knowledge management
-
-Microsoft's GraphRAG pipeline works in three phases:
+This is the production evolution implied by the interview discussion, not the current prototype deployment.
 
 ```text
-PHASE 1 — EXTRACTION
----------------------
-source documents (closed tickets, policies, vendor records)
-  -> LLM entity/relationship extraction
-  -> (entity, relationship, entity) triples
+CONVEX
+  -> operational truth
+  -> files, issues, policies, action items
+  -> streaming sessions and eval artifacts
 
-PHASE 2 — COMMUNITY DETECTION
-------------------------------
-entity graph
-  -> Hierarchical Leiden algorithm (graspologic / NetworkX)
-  -> semantically clustered communities
-  -> LLM-generated community summaries
+CLEANED HISTORICAL CLOSED TICKETS
+  -> curated goldens for judging
+  -> separate retrieval projection
 
-PHASE 3 — QUERY
-----------------
-user query
-  -> local search: entity-centric subgraph traversal within N hops
-  -> global search: map-reduce over community summaries
-  -> hybrid: both local and global for complex operational queries
+NEO4J
+  -> relationship-aware historical graph
+  -> vector indexes + GraphRAG retrievers
+
+LANGFUSE
+  -> traces
+  -> evals
+  -> drift / topic monitoring
 ```
 
-Why graph retrieval outperforms flat vector search for operational AI:
+### Why this matters
 
-| Capability | Vector search | Graph traversal | Impact for this app |
-| --- | --- | --- | --- |
-| Semantic similarity | Strong | Moderate | Good for finding similar past issues |
-| Multi-hop reasoning | Weak (chunks are independent) | Strong (typed edge traversal) | Critical for "how does this vendor issue relate to that staffing gap" |
-| Co-reference resolution | Weak | Strong | Needed when the same root cause spans multiple tickets |
-| Causal chain recovery | Not supported | Native via path queries | Required for escalation path reconstruction |
-| Hybrid retrieval | Vector only | Graph structure + vector similarity in one Cypher query (Neo4j 5.11+) | Best of both worlds |
+Different stores can surface different issue profiles because of:
 
-Production stack recommendation:
+- population mix
+- weather patterns
+- local vendor and supply-chain dependencies
+- store format and traffic profile
 
-- Neo4j AuraDB (managed) or self-hosted with APOC plugin
-- Microsoft GraphRAG library with Dynamic Community Selection (reduces token usage ~79% over v1)
-- LlamaIndex `KnowledgeGraphIndex` or LangChain `Neo4jGraph` for integration
-- Community detection via Hierarchical Leiden partitioning
+That is why broader regional synthesis eventually benefits from a graph layer. A graph can make `store`, `vendor`, `policy`, `SKU`, `region`, `weather event`, and `resolution outcome` first-class connected entities instead of leaving those relationships buried inside text chunks.
 
-### 2. Delta-diff append pattern for incremental graph maintenance
+### Recommended production shape
 
-The core pattern avoids full reindexing when new tickets or policies arrive:
-
-```text
-NEW DATA ARRIVES
-  |
-  v
-ENTITY EXTRACTION (LLM on new docs only)
-  |
-  v
-DIFF AGAINST EXISTING GRAPH
-  |
-  +-- Neo4j MERGE: atomically match-or-create
-  |     MERGE (n:Entity {id: row.id})
-  |     ON CREATE SET n += row.props
-  |     ON MATCH SET n.mention_count = n.mention_count + 1,
-  |                  n.last_seen_at = timestamp()
-  |
-  +-- Batch via UNWIND for 10-50K entities per transaction
-  |
-  v
-RE-SUMMARIZE AFFECTED COMMUNITIES ONLY
-  |
-  v
-GRAPH UPDATED (no full reindex)
-```
-
-Change detection tooling:
-
-| Tool | How it works | Best use |
+| Concern | Recommended home | Why |
 | --- | --- | --- |
-| Neo4j MERGE | Atomically matches-or-creates node/edge patterns, prevents duplicates, supports conditional property updates via ON CREATE / ON MATCH | Primary upsert primitive for all graph updates |
-| Neo4j CDC | Native streaming of node/relationship mutations via Kafka Connect or custom consumer | Trigger downstream re-summarization of affected communities |
-| APOC Triggers | Fire Cypher on every commit, useful for propagating metadata, updating counters, or queuing re-indexing jobs | Real-time dependent updates (e.g., recalculate risk scores when new issues link to a vendor) |
-| Scheduled delta jobs | Cron pipeline querying `WHERE n.created_at > $lastRunTimestamp`, extracts delta subgraph, re-runs Leiden on affected clusters only | Batch maintenance during off-peak hours |
+| Live operational state | `Convex` | Still the best home for current issues, files, action items, chat sessions, and eval artifacts |
+| Historical relationship retrieval | `Neo4j` | Better fit once multi-hop relationships across stores, vendors, SKUs, policies, and environmental context matter |
+| Vector retrieval | Neo4j vector indexes first, external retrievers second | The official Neo4j GraphRAG package supports Neo4j-native retrieval and can also work with external vector stores such as Pinecone and Qdrant |
+| Monitoring and evals | `Langfuse` plus product metrics | Best fit for tracing, evaluation, latency/cost monitoring, and drift detection |
 
-### 3. Golden dataset evaluation from historical closed tickets
+### Incremental graph maintenance
 
-Building the golden set:
-
-```text
-HISTORICAL CLOSED TICKETS (cleaned, validated)
-  |
-  v
-STRATIFIED SAMPLE (500-1000 tickets)
-  by category, complexity, resolution path
-  |
-  v
-EXTRACT PER TICKET:
-  (query, ideal_answer, reasoning_chain, source_documents)
-  |
-  v
-HUMAN ANNOTATION + CORRECTION
-  |
-  v
-TAG DIFFICULTY TIERS:
-  - single-hop lookup
-  - multi-hop reasoning
-  - ambiguous / requires-clarification
-  |
-  v
-GOLDEN DATASET
-```
-
-Automated eval harness (extending the current `convex/eval.ts` pattern):
-
-- Run the production agent against every golden query
-- Capture: retrieved context, generated answer, latency, token cost, graph paths traversed
-- LLM-as-judge scoring using a stronger model than production (e.g., Claude Opus judging Sonnet responses)
-- Structured rubrics for: correctness (0-5), completeness, hallucination detection, source attribution
-- Frameworks: DeepEval (`deepeval` package) for `GEval` metric, Braintrust and Arize Phoenix for hosted eval pipelines with drift tracking
-
-Continuous improvement loop:
+The maintainable production pattern is not "rebuild the graph every time." It is delta-based maintenance.
 
 ```text
-PRODUCTION QUERIES
-  |
-  v
-AGENT RESPONSES
-  |
-  +-- 5-10% sampled for automated LLM-as-judge scoring
-  +-- user flags / low-confidence detections
-  |
-  v
-FAILED CASES TRIAGED INTO GOLDEN SET (after human review)
-  |
-  v
-RE-RUN EVALS ON EVERY:
-  - graph update
-  - prompt change
-  - model version change
-  |
-  v
-EVAL SCORE TIME SERIES
-  -> regression = automatic rollback gate in CI/CD
+new closed tickets / policy changes / vendor updates
+  -> review + extraction
+  -> incremental upserts
+  -> refresh affected graph neighborhoods
+  -> keep retrieval current without a full rebuild
 ```
 
-### 4. Monitoring and observability for graph-augmented AI
+Why this is practical:
 
-Graph health metrics:
+- Neo4j CDC supports querying changes after a known change identifier via `db.cdc.query`
+- Neo4j vector indexes are first-class and, as of Neo4j 2026.01, the preferred query path is the Cypher `SEARCH` clause
+- the official Neo4j GraphRAG package already provides retrieval building blocks for vector, hybrid, and Cypher-backed retrieval
 
-| Metric | What to track | Alert threshold |
-| --- | --- | --- |
-| Graph staleness | `MAX(n.last_updated)` per entity type; age of oldest community summary | > 7 days for active categories |
-| Entity drift | New entities/week vs. baseline; orphan node count (no edges) | > 2 sigma deviation from rolling mean |
-| Coverage gaps | Queries that return zero graph paths | > 15% of queries in any category |
-| Community coherence | Modularity score post-Leiden; avg community size | Sudden fragmentation or mega-cluster formation |
+Important caution:
 
-Query and agent performance:
+- the Neo4j Knowledge Graph Builder is available, but its KG-construction features are still experimental
+- for production, prefer reviewed ETL and explicit upserts over fully automatic graph construction until the schema and extraction contract are stable
 
-| Layer | What to track | Tooling |
-| --- | --- | --- |
-| Graph query | db hits, page cache misses, Cypher plan regressions | Neo4j `PROFILE`/`EXPLAIN`, Prometheus exporter |
-| End-to-end retrieval | graph query + vector search + LLM generation latency | OpenTelemetry spans |
-| Token cost | input context size per query (correlates with graph traversal depth) | LangSmith / Arize Phoenix |
-| Answer quality | rolling LLM-as-judge scores on production sample | Same rubrics as golden eval set |
-| Semantic drift | weekly embedding centroid shift vs. golden set distribution | Alert when query distribution diverges from training/eval distribution |
+### Golden datasets in production
 
-Recommended observability stack:
+The correct production split is:
 
 ```text
-GRAFANA DASHBOARDS
-  <- Neo4j metrics endpoint
-  <- custom Prometheus exporters for graph counters
-  <- staleness / coverage gap alerts
+cleaned high-quality closed tickets
+  -> versioned golden dataset for judging
 
-LANGSMITH / ARIZE PHOENIX
-  <- trace-level LLM observability
-  <- every agent call: retrieved context, graph paths, generated response
-
-PAGERDUTY
-  <- staleness threshold breach
-  <- coverage gap threshold breach
-  <- eval regression detection
+broader cleaned historical archive
+  -> retrieval / GraphRAG corpus
 ```
+
+That separation prevents a common failure mode where weak historical text becomes both:
+
+- what the agent retrieves
+- and what the evaluation system calls "correct"
+
+### Monitoring new topics
+
+Recommended operating loop:
+
+```text
+production traces + eval results + operator feedback
+  -> detect new or drifting topics
+  -> human review queue
+  -> approved deltas appended into graph
+  -> refreshed retrieval + updated goldens when warranted
+```
+
+This is the maintainable way to keep the system current as policies, vendors, weather patterns, and regional operating conditions change.
 
 ## Source Notes
 
-These docs were used to ground the tradeoff, workflow, and production roadmap sections.
-
-### Core stack
+These docs were used to ground the tradeoff and workflow sections.
 
 - Convex vector search: https://docs.convex.dev/search/vector-search
 - Convex file storage: https://docs.convex.dev/file-storage
 - Gemini models: https://ai.google.dev/gemini-api/docs/models/gemini
 - Gemini function calling: https://ai.google.dev/gemini-api/docs/function-calling
-
-### Agent frameworks and observability
-
 - LangGraph workflows and agents: https://docs.langchain.com/oss/python/langgraph/workflows-agents
 - Deep Agents overview: https://docs.langchain.com/oss/python/deepagents/index
 - Deep Agents streaming: https://docs.langchain.com/oss/python/deepagents/streaming
@@ -1114,43 +1028,19 @@ These docs were used to ground the tradeoff, workflow, and production roadmap se
 - Langfuse overview: https://langfuse.com/docs
 - Langfuse observability: https://langfuse.com/docs/observability/overview
 - Langfuse LangChain integration: https://langfuse.com/docs/integrations/langchain
-- AI observability by LangChain: https://www.langchain.com/articles/ai-observability
-
-### GraphRAG and knowledge graph
-
-- Microsoft GraphRAG paper: https://arxiv.org/html/2404.16130v2
-- LlamaIndex GraphRAG implementation: https://docs.llamaindex.ai/en/stable/examples/cookbooks/GraphRAG_v1/
-- Neo4j GraphRAG context provider: https://learn.microsoft.com/en-us/agent-framework/integrations/neo4j-graphrag
 - Neo4j GraphRAG for Python: https://neo4j.com/docs/neo4j-graphrag-python/current/
 - Neo4j GraphRAG RAG retrievers: https://neo4j.com/docs/neo4j-graphrag-python/current/user_guide_rag.html
 - Neo4j Knowledge Graph Builder: https://neo4j.com/docs/neo4j-graphrag-python/current/user_guide_kg_builder.html
-- Neo4j MERGE documentation: https://neo4j.com/docs/cypher-manual/current/clauses/merge/
-- Neo4j APOC triggers: https://neo4j.com/docs/apoc/current/background-operations/triggers/
 - Neo4j Change Data Capture: https://neo4j.com/docs/cdc/current/procedures/
-- Neo4j CDC with GCP Pub/Sub: https://neo4j.com/blog/graph-database/seamless-data-pipeline-neo4j-and-google-cloud-pub-sub/
 - Neo4j vector indexes: https://neo4j.com/docs/cypher-manual/current/indexes/semantic-indexes/vector-indexes/
-- Fast batched graph updates with Neo4j: https://medium.com/neo4j/5-tips-tricks-for-fast-batched-updates-of-graph-structures-with-neo4j-and-cypher-73c7f693c8cc
-- Graph RAG in production: https://www.paperclipped.de/en/blog/graph-rag-production/
-
-### Vector and database alternatives
-
 - pgvector: https://github.com/pgvector/pgvector
 - Pinecone docs: https://docs.pinecone.io/
 - Chroma embedding functions: https://docs.trychroma.com/docs/embeddings/embedding-functions
 - Chroma index reference: https://docs.trychroma.com/cloud/schema/index-reference
 - Qdrant overview: https://qdrant.tech/documentation/overview/what-is-qdrant/
 - Qdrant search: https://qdrant.tech/documentation/search/
-### Storage
-
 - Cloudflare R2 pricing: https://developers.cloudflare.com/r2/pricing/
 - Amazon S3 pricing: https://aws.amazon.com/s3/pricing/
-
-### Evaluation and monitoring
-
-- Building a golden dataset for AI evaluation: https://www.getmaxim.ai/articles/building-a-golden-dataset-for-ai-evaluation-a-step-by-step-guide/
-- LLM-as-judge best practices: https://www.montecarlodata.com/blog-llm-as-judge/
-- Google Cloud agent evaluation methodology: https://cloud.google.com/blog/topics/developers-practitioners/a-methodical-approach-to-agent-evaluation
-- LLM evaluation at Booking.com: https://booking.ai/llm-evaluation-practical-tips-at-booking-com-1b038a0d6662
 
 ## License
 
