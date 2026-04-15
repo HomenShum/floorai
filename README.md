@@ -55,21 +55,21 @@ golden_dataset.json
 
 [![FloorAI Demo Video](docs/images/video-thumbnail.png)](https://github.com/HomenShum/floorai/raw/master/video/out/FloorAIDemo.mp4)
 
-> Click the thumbnail to download and play the demo video (39s, 3 MB). Built with [Remotion](https://www.remotion.dev/) — source at [video/src](video/src). Run `npm run video:studio` to edit, `npm run video:render` to rebuild.
+> Click the thumbnail to download and play the demo video (39s, 3 MB). Built with [Remotion](https://www.remotion.dev/) - source at [video/src](video/src). Run `npm run video:studio` to edit, `npm run video:render` to rebuild.
 
 ### Presentation Slides
 
-**Slide 1 — Product overview and operator personas**
+**Slide 1 - Product overview and operator personas**
 
-![Slide 1 — Product overview](docs/images/slide-1.png)
+![Slide 1 - Product overview](docs/images/slide-1.png)
 
-**Slide 2 — Architecture and evaluation pipeline**
+**Slide 2 - Architecture and evaluation pipeline**
 
-![Slide 2 — Architecture and evaluation](docs/images/slide-2.png)
+![Slide 2 - Architecture and evaluation](docs/images/slide-2.png)
 
-**Slide 3 — Design tradeoffs and next steps**
+**Slide 3 - Design tradeoffs and next steps**
 
-![Slide 3 — Design tradeoffs](docs/images/slide-3.png)
+![Slide 3 - Design tradeoffs](docs/images/slide-3.png)
 
 > Interactive deck: [slides/presentation.html](slides/presentation.html)
 
@@ -178,41 +178,174 @@ Why the current repo stayed Convex-first:
 - issue state, action items, files, audit logs, streamed message events, and eval artifacts all benefit from living in the same backend
 - the retrieval corpus is important, but it is supporting evidence rather than the whole product
 
-### 2. Deterministic vs single-call LLM vs harnessed agent
+### 2. Deterministic vs single-call LLM vs harnessed agent: the missing layer is specification
+
+The original framing was:
 
 ```text
-2023-2024 COMMON PATTERN
-------------------------
-prompt everything to one strong model
-  -> hidden reasoning
-  -> react-style tool loop
-  -> final answer
+which runtime is better?
+  deterministic
+  vs single LLM call
+  vs harnessed agent
+```
 
-BETTER FIT FOR THIS APP
------------------------
-classify
-  -> retrieve bounded evidence
-  -> call tools explicitly
-  -> synthesize only when needed
-  -> validate references before finalizing
+The more correct framing is:
+
+```text
+STEP 0: CAN THE TEAM EXTERNALIZE HOW IT WORKS?
+----------------------------------------------
+role boundaries
+  + escalation rules
+  + trusted sources
+  + recurring workflows
+  + hidden judgment calls
+
+If no:
+  all downstream runtimes underperform
+
+If yes:
+  deterministic, single-call, and harnessed systems all get better
+```
+
+That is the key implication of the "markdown operating system" and tacit-knowledge discussion. The runtime is not the first problem. The first problem is whether the organization has converted invisible expertise into explicit operating artifacts.
+
+For this app, that future roadmap looks like:
+
+```text
+LAYER 0: ELICITATION / OPERATING SYSTEM
+---------------------------------------
+interviewer agent
+  -> asks store and regional leaders how they actually decide
+  -> captures tacit workflows and escalation boundaries
+  -> turns judgment into structured artifacts
+
+LAYER 1: RUNTIME EXECUTION
+--------------------------
+deterministic renderer
+or single-call model
+or harnessed agent
+or orchestrator-worker graph
+```
+
+In practical terms, the "markdown OS" maps into this product as:
+
+| Operating artifact | Retail-ops equivalent in this repo / roadmap |
+| --- | --- |
+| `soul.md` | Agent charter, escalation boundaries, trusted source order, decision rights |
+| `identity.md` | Store manager vs regional manager persona, tone, and scope constraints |
+| `user.md` | Store profile, region profile, operator habits, local norms, recurring patterns |
+| `heartbeat.md` | Daily watch cadence, unresolved action checks, scheduled risk summaries |
+
+#### Runtime options after specification is in place
+
+```text
+BAD PATH
+--------
+install agent
+  -> ask vague question
+  -> hope model figures out the workflow
+
+BETTER PATH
+-----------
+elicit workflow
+  -> codify operating system
+  -> retrieve scoped evidence
+  -> pick cheapest runtime that can safely solve the task
 ```
 
 | Approach | Latency / cost | Strengths | Weaknesses | Best use here |
 | --- | --- | --- | --- | --- |
-| Deterministic renderer | Lowest | Fast, cheap, reliable, easy to audit | Brittle if the case is ambiguous or spans multiple issues | Tracked single-issue cases with known policy packet and known action steps |
-| Single LLM call | Low to medium | Simple to ship, flexible, fewer moving parts | Easy to hallucinate, weak traceability, weak replayability, weak policy control | Good for early prototypes, not ideal for high-trust operations |
-| Harnessed planner + tool calls | Medium | Explicit steps, inspectable trace, better grounding, easier quality gates | More engineering effort | Best current default for this app |
+| Deterministic renderer | Lowest | Fast, cheap, reliable, easy to audit | Brittle if the case is ambiguous or the operating packet is incomplete | Tracked single-issue cases with known policy packet and known action steps |
+| Single LLM call | Low to medium | Simple to ship, flexible, fewer moving parts | Easy to hallucinate when the operating system is vague or incomplete | Good for early prototypes or low-risk summarization, not ideal for high-trust operations |
+| Harnessed planner + tool calls | Medium | Explicit steps, inspectable trace, better grounding, easier quality gates | More engineering effort and still depends on having good operating knowledge upfront | Best current default for this app |
 | Orchestrator-worker graph | Medium to high | Better multi-issue decomposition, parallel subwork, cleaner context management | More runtime complexity and stronger observability needs | Best next step for regional multi-issue synthesis |
+| Elicitation / interviewer agent | Upfront human time cost, lower runtime cost later | Converts tacit knowledge into reusable operating context, improves every downstream runtime | Requires disciplined stakeholder participation and review | Best future addition because it raises the quality ceiling of every other option |
 
 Root-cause takeaway:
 
 - single-issue quality improves when the assistant writes from a canonical issue packet, not a broad context blob
 - multi-issue quality improves when retrieval and ranking are decomposed into typed steps before synthesis
-- modern "agentic" quality comes less from hidden chain-of-thought and more from explicit intermediate state
+- runtime quality improves only after tacit operator knowledge has been externalized
+- modern agentic quality comes less from hidden chain-of-thought and more from explicit operating context plus explicit intermediate state
 
-### 3. Gemini 3.1 Pro Preview vs cheaper faster model paths
+Compact future loop:
 
-This repo is currently wired around `gemini-3.1-pro-preview`, but the workflow does not require that class of model for every turn.
+```text
+operator knowledge
+  -> elicitation agent
+  -> operating system
+  -> runtime selector
+      -> deterministic
+      -> fast hosted model
+      -> pro hosted model
+      -> open local model
+  -> answer + trace + eval
+  -> monitoring + drift detection
+  -> GraphRAG / golden refresh
+```
+
+### 3. Model choice: workflow design matters more than raw model tier
+
+This repo is currently wired around `gemini-3.1-pro-preview`, but the larger design lesson is that model choice is not the main divider between productive and unproductive agent systems.
+
+The more important question is:
+
+```text
+DOES THE AGENT HAVE A REAL OPERATING SYSTEM?
+--------------------------------------------
+clear role
+  + clear user context
+  + clear escalation rules
+  + clear recurring workflows
+  + clear source priorities
+  + clear quality gates
+
+If yes:
+  cheaper models can do a surprising amount of useful work
+
+If no:
+  even the best model becomes an expensive generic chatbot
+```
+
+That is why the right comparison is not just `Gemini Pro` versus `Gemini Flash`. It is:
+
+```text
+weakly specified agent + strong model
+vs
+well-specified workflow + cheaper model + tool calls + validation
+```
+
+For this product, the highest-value agent design pattern is:
+
+```text
+FIRST AGENT
+-----------
+interviewer / elicitation agent
+  -> extracts tacit operator knowledge
+  -> documents recurring decisions
+  -> captures escalation boundaries
+  -> defines trusted sources
+
+THEN
+----
+runtime agent
+  -> uses that operating knowledge
+  -> retrieves scoped evidence
+  -> calls tools
+  -> synthesizes only when necessary
+```
+
+This is the practical version of the "markdown operating system" idea. In this repo, that operating system should not live only as loose notes. It should become structured product artifacts such as:
+
+- scoped issue packets
+- policy packets
+- store and region operating profiles
+- escalation rules
+- answer packets
+- quality checks
+- golden eval rubrics
+
+#### Current model stance
 
 ```text
 CHEAPEST PATH
@@ -224,32 +357,71 @@ deterministic render
 
 DEFAULT PATH
 ------------
-flash / flash-lite style model
+Gemini 2.5 Flash
   -> classify
+  -> route
   -> plan tool order
   -> summarize tool results
 
-EXPENSIVE PATH
---------------
-pro-class model
+HIGHEST-VALUE EXPENSIVE PATH
+----------------------------
+Gemini 3.1 Pro Preview
   -> ambiguous cases
   -> broader regional synthesis
   -> web-grounded synthesis
   -> multimodal evidence review
+
+LOCAL / EDGE OPEN-MODEL PATH
+----------------------------
+Gemma 4
+  -> local and edge reasoning
+  -> on-device or workstation agents
+  -> privacy-sensitive helper tasks
+  -> fallback / offline workflows
 ```
 
-| Path | Relative latency | Relative cost | What it is best at | Recommendation for this app |
+| Option | Status / reality | Strengths | Weaknesses | Best use here |
 | --- | --- | --- | --- | --- |
-| Deterministic path | Lowest | Lowest | Exact known operational guidance | Use whenever the app already has a high-confidence issue + policy packet |
-| Flash / Flash-Lite planner path | Lower | Lower | Classification, routing, extraction, planning tool order, concise summaries | This should handle a large share of day-to-day store and regional queries in production |
-| Pro-class synthesis path | Higher | Higher | Ambiguity, nuanced synthesis, messy cross-issue prioritization, richer multimodal reasoning | Reserve for hard regional synthesis and cases where cheaper paths fail confidence checks |
+| `gemini-1.5-pro` | Historical reference only; Google announced Gemini 1.5 models were shut down on September 29, 2025 | Was a strong long-context model | Not a current recommendation and not the right target to optimize around now | Mention only for historical comparison |
+| `gemini-2.5-flash` | Current fast/cost-efficient path in Google's Gemini docs | Strong price-performance for routing, classification, summarization, and tool-driven flows | Less ideal than Pro for messy ambiguity and broad synthesis | Best default production model for many day-to-day store and regional flows |
+| `gemini-3.1-pro-preview` | Best current choice in this repo for hard operational synthesis | Stronger reasoning, ambiguity handling, multimodal review, and grounded synthesis | Higher latency and cost | Keep for hard regional, multimodal, and externally grounded cases |
+| `Gemma 4` | Current open-model family in Google's official docs, with E2B/E4B edge-oriented variants and larger 26B / 31B variants | Purpose-built for advanced reasoning and agentic workflows, with native function calling, text/audio/image support, >140 languages, and up to 256K context depending on size; strong fit for local-first and edge scenarios | Not the natural primary choice for this repo's hosted Google Search grounding path, and open-model operations add their own serving burden | Best future fit for local extraction, privacy-sensitive helper jobs, offline workflows, or a local-first agent tier |
 
-Why this workflow probably did not need the strongest model for every request:
+Why the workflow does not need the strongest model for every request:
 
-- many store questions are really retrieval plus policy application problems
+- many store questions are retrieval plus policy application problems, not open-ended reasoning problems
 - daily watch summaries are often aggregation and templating problems
-- operator trust depends more on exact references than eloquence
-- chained tool calls plus evidence packets can outperform a single expensive model turn on structured operational tasks
+- operator trust depends more on exact references and escalation boundaries than eloquence
+- chained tool calls plus evidence packets can outperform a single expensive model turn on structured operational work
+- a well-specified agent "operating system" often matters more than moving from Flash to Pro
+
+#### The tacit knowledge trap
+
+The deeper reason agent systems fail is not usually model quality. It is that expert human operators often cannot easily explain their own micro-decisions because those decisions have become compressed into tacit judgment.
+
+```text
+novice worker
+  -> explicit checklist
+  -> easy to explain
+
+senior operator
+  -> compressed pattern matching
+  -> fast, but hard to externalize
+
+agent failure mode
+  -> user gives vague request
+  -> agent gets weak context
+  -> output feels generic or wrong
+```
+
+That means the real productivity divide is between teams that can externalize their operating judgment and teams that cannot.
+
+For this app, the production implication is:
+
+- start by eliciting how store and regional operators actually make decisions
+- encode that into structured source priority, escalation logic, and answer expectations
+- then let cheaper models handle the work they are actually good at
+- use stronger models only when the evidence or ambiguity truly requires them
 
 ### 4. Where LangChain, LangGraph, Deep Agents, and Langfuse fit
 
@@ -939,6 +1111,25 @@ LANGFUSE
   -> drift / topic monitoring
 ```
 
+### Step zero in the roadmap: an elicitation agent
+
+Before scaling the runtime agent, a strong production team should consider a separate elicitation workflow whose job is to interview experienced operators and convert tacit knowledge into explicit operating artifacts.
+
+```text
+senior operator knowledge
+  -> interviewer / elicitation agent
+  -> structured operating system
+  -> runtime assistant becomes materially better
+```
+
+That operating system is where the real leverage lives:
+
+- what should be escalated versus handled locally
+- which policies override local intuition
+- what sources are trusted first
+- what daily and weekly review rhythms matter
+- which edge cases repeatedly cause expensive mistakes
+
 ### Why this matters
 
 Different stores can surface different issue profiles because of:
@@ -1028,6 +1219,9 @@ These docs were used to ground the tradeoff and workflow sections.
 - Langfuse overview: https://langfuse.com/docs
 - Langfuse observability: https://langfuse.com/docs/observability/overview
 - Langfuse LangChain integration: https://langfuse.com/docs/integrations/langchain
+- Gemma models overview: https://ai.google.dev/gemma/docs
+- Gemma 4 model page: https://deepmind.google/models/gemma/gemma-4/
+- Gemma news hub: https://deepmind.google/blog/
 - Neo4j GraphRAG for Python: https://neo4j.com/docs/neo4j-graphrag-python/current/
 - Neo4j GraphRAG RAG retrievers: https://neo4j.com/docs/neo4j-graphrag-python/current/user_guide_rag.html
 - Neo4j Knowledge Graph Builder: https://neo4j.com/docs/neo4j-graphrag-python/current/user_guide_kg_builder.html
