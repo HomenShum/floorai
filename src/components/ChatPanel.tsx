@@ -973,9 +973,6 @@ export function ChatPanel({ operatorId, storeId, regionId, issueContext, onClear
     }
   };
 
-  // Hide on /chat page — GroupChat component handles that route
-  if (chatPagePathname === "/chat") return null;
-
   return (
     <>
       {!isOpen ? (
