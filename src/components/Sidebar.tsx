@@ -11,6 +11,7 @@ const navLinks = [
   { href: "/", label: "Home" },
   { href: "/store", label: "Store" },
   { href: "/regional", label: "Regional" },
+  { href: "/chat", label: "Chat" },
 ];
 
 const stores = [
