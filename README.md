@@ -53,9 +53,9 @@ golden_dataset.json
 
 ### Demo Video
 
-<video src="https://github.com/HomenShum/floorai/raw/master/video/out/FloorAIDemo.mp4" controls width="100%"></video>
+[![FloorAI Demo Video](docs/images/video-thumbnail.png)](https://github.com/HomenShum/floorai/raw/master/video/out/FloorAIDemo.mp4)
 
-> Built with [Remotion](https://www.remotion.dev/) — source at [video/src](video/src). Run `npm run video:studio` to edit, `npm run video:render` to rebuild.
+> Click the thumbnail to download and play the demo video (39s, 3 MB). Built with [Remotion](https://www.remotion.dev/) — source at [video/src](video/src). Run `npm run video:studio` to edit, `npm run video:render` to rebuild.
 
 ### Presentation Slides
 
