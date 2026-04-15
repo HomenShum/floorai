@@ -4,6 +4,8 @@ import { Suspense } from "react";
 import { ChatPanel } from "@/components/ChatPanel";
 import { useOperatorSession } from "@/components/OperatorSessionProvider";
 
+const SHARED_SESSION_ID = "group-chat-general";
+
 function ChatPageInner() {
   const { operator } = useOperatorSession();
 
@@ -11,11 +13,11 @@ function ChatPageInner() {
     return (
       <div className="flex h-[calc(100vh-24px)] items-center justify-center">
         <div className="text-center">
-          <p className="text-sm font-medium text-gray-900">General Chat</p>
+          <p className="text-sm font-medium text-gray-900">Group Chat</p>
           <p className="mt-1 text-sm text-gray-500">
             Select an operator session from{" "}
             <a href="/" className="text-indigo-600 hover:underline">home</a>
-            {" "}to start chatting.
+            {" "}to join the group chat.
           </p>
         </div>
       </div>
@@ -27,6 +29,7 @@ function ChatPageInner() {
       <ChatPanel
         operatorId={operator.operatorId}
         operatorName={operator.name}
+        sharedSessionId={SHARED_SESSION_ID}
       />
     </div>
   );

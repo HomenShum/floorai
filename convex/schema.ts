@@ -146,6 +146,7 @@ export default defineSchema({
   messages: defineTable({
     role: v.string(),
     content: v.string(),
+    senderName: v.optional(v.string()),
     status: v.optional(v.string()),
     storeId: v.optional(v.string()),
     regionId: v.optional(v.string()),

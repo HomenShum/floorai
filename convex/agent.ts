@@ -1321,6 +1321,7 @@ export const chat = action({
     storeId: v.optional(v.string()),
     regionId: v.optional(v.string()),
     sessionId: v.string(),
+    senderName: v.optional(v.string()),
     fileIds: v.optional(v.array(v.string())),
   },
   handler: async (ctx, args): Promise<ChatActionResult> => {
@@ -1464,6 +1465,7 @@ export const chat = action({
       await ctx.runMutation(api.messages.send, {
         role: "user",
         content: args.query,
+        senderName: args.senderName,
         status: "completed",
         storeId: args.storeId,
         regionId: args.regionId,

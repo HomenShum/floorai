@@ -22,6 +22,7 @@ interface ChatPanelProps {
   issueContext?: IssueContext;
   onClearIssue?: () => void;
   operatorName?: string;
+  sharedSessionId?: string;
 }
 
 type ParsedTrace = {
@@ -762,7 +763,7 @@ function buildRegionalGreeting(
   return `Here's your regional overview${regionId ? ` for ${regionId}` : ""}. ${openIssues.length} open issue${openIssues.length !== 1 ? "s" : ""} across stores. Ask about store performance, escalations, or cross-store patterns.`;
 }
 
-export function ChatPanel({ operatorId, storeId, regionId, issueContext, onClearIssue, operatorName }: ChatPanelProps) {
+export function ChatPanel({ operatorId, storeId, regionId, issueContext, onClearIssue, operatorName, sharedSessionId }: ChatPanelProps) {
   const scopeKey = storeId || regionId || "global";
   const [input, setInput] = useState("");
   const [files, setFiles] = useState<File[]>([]);
@@ -824,7 +825,10 @@ export function ChatPanel({ operatorId, storeId, regionId, issueContext, onClear
   );
 
   useEffect(() => {
-    if (issueContext) {
+    if (sharedSessionId) {
+      // Group chat mode: all operators share the same session
+      setSessionId(sharedSessionId);
+    } else if (issueContext) {
       // Thread mode: deterministic session ID per issue (persists across page loads)
       setSessionId(`session-${scopeKey}-thread-${issueContext.issueId}`);
     } else {
@@ -838,7 +842,7 @@ export function ChatPanel({ operatorId, storeId, regionId, issueContext, onClear
       }
       setSessionId(nextSession);
     }
-  }, [scopeKey, issueContext?.issueId]);
+  }, [scopeKey, issueContext?.issueId, sharedSessionId]);
 
   useEffect(() => {
     const sidebarStorageKey = `ops-sidebar-open-${scopeKey}`;
@@ -955,6 +959,7 @@ export function ChatPanel({ operatorId, storeId, regionId, issueContext, onClear
         storeId,
         regionId,
         sessionId,
+        senderName: operatorName,
         fileIds: uploadedFiles.map((file) => file.fileId),
       });
       setFiles([]);
@@ -1123,7 +1128,12 @@ export function ChatPanel({ operatorId, storeId, regionId, issueContext, onClear
                         <AssistantMarkdown content={message.content || (message.status === "streaming" ? " " : "")} />
                       </div>
                     ) : (
-                      <p className="whitespace-pre-wrap text-sm leading-7">{message.content}</p>
+                      <div>
+                        {(message as any).senderName && (
+                          <p className="mb-1 text-[11px] font-semibold opacity-80">{(message as any).senderName}</p>
+                        )}
+                        <p className="whitespace-pre-wrap text-sm leading-7">{message.content}</p>
+                      </div>
                     )}
 
                     {messageAttachments.length ? (
