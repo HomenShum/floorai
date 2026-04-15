@@ -719,6 +719,49 @@ function getGreeting(): string {
   return "Good evening";
 }
 
+function buildStoreGreeting(
+  storeId: string,
+  staffingData: any,
+  storeMetrics: any
+): string {
+  const parts: string[] = [];
+  if (staffingData) {
+    parts.push(
+      `You have ${staffingData.scheduledCount} scheduled, ${staffingData.actualCount} showed up, ${staffingData.noShowCount} no-show${staffingData.noShowCount !== 1 ? "s" : ""}`
+    );
+  }
+  if (storeMetrics && storeMetrics.lowStockCount > 0) {
+    parts.push(`${storeMetrics.lowStockCount} low stock item${storeMetrics.lowStockCount !== 1 ? "s" : ""} need attention`);
+  }
+  if (parts.length > 0) {
+    return `Here's your workspace for store ${storeId}. ${parts.join(". ")}. Ask for triage, policy interpretation, risk summaries, or upload evidence.`;
+  }
+  return `Here's your workspace for store ${storeId}. Ask for triage, policy interpretation, risk summaries, or upload evidence.`;
+}
+
+function buildRegionalGreeting(
+  regionId: string | undefined,
+  issues: any[] | undefined
+): string {
+  if (!issues || issues.length === 0) {
+    return `Here's your regional overview${regionId ? ` for ${regionId}` : ""}. Ask about store performance, escalations, or cross-store patterns.`;
+  }
+  const openIssues = issues.filter((i: any) => i.status !== "resolved");
+  const criticalCount = openIssues.filter((i: any) => i.severity === "critical").length;
+  const escalatedCount = openIssues.filter((i: any) => i.escalatedToRegional).length;
+  const parts: string[] = [];
+  if (criticalCount > 0) {
+    parts.push(`${criticalCount} critical issue${criticalCount !== 1 ? "s" : ""}`);
+  }
+  if (escalatedCount > 0) {
+    parts.push(`${escalatedCount} escalated case${escalatedCount !== 1 ? "s" : ""}`);
+  }
+  if (parts.length > 0) {
+    return `Here's your regional overview${regionId ? ` for ${regionId}` : ""}. ${parts.join(" and ")} need your attention. Ask about store performance, escalations, or cross-store patterns.`;
+  }
+  return `Here's your regional overview${regionId ? ` for ${regionId}` : ""}. ${openIssues.length} open issue${openIssues.length !== 1 ? "s" : ""} across stores. Ask about store performance, escalations, or cross-store patterns.`;
+}
+
 export function ChatPanel({ operatorId, storeId, regionId, issueContext, onClearIssue, operatorName }: ChatPanelProps) {
   const scopeKey = storeId || regionId || "global";
   const [input, setInput] = useState("");
@@ -732,6 +775,20 @@ export function ChatPanel({ operatorId, storeId, regionId, issueContext, onClear
   const chat = useAction(api.agent.chat);
   const generateUploadUrl = useMutation(api.files.generateUploadUrl);
   const createFileRecord = useMutation(api.files.create);
+
+  // Shift-aware greeting data
+  const staffingData = useQuery(
+    api.staffing.getLatestByStore,
+    storeId ? { operatorId, storeId } : "skip"
+  );
+  const storeMetrics = useQuery(
+    api.operations.getStoreMetrics,
+    storeId ? { operatorId, storeId } : "skip"
+  );
+  const regionalIssues = useQuery(
+    api.issues.getAll,
+    regionId ? { operatorId } : "skip"
+  );
   const messages = useQuery(
     api.messages.getBySession,
     sessionId
@@ -1012,8 +1069,8 @@ export function ChatPanel({ operatorId, storeId, regionId, issueContext, onClear
                   {issueContext
                     ? `Thread for ${issueContext.issueId}. Ask about status, policy, or next steps for this issue.`
                     : storeId
-                      ? `Here's your workspace for store ${storeId}. Ask for triage, policy interpretation, risk summaries, or upload evidence.`
-                      : `Here's your regional overview${regionId ? ` for ${regionId}` : ""}. Ask about store performance, escalations, or cross-store patterns.`}
+                      ? buildStoreGreeting(storeId, staffingData, storeMetrics)
+                      : buildRegionalGreeting(regionId, regionalIssues)}
                 </p>
               </div>
               <div className="grid gap-2">

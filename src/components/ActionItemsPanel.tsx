@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 
 import { api } from "../../convex/_generated/api";
@@ -30,6 +31,22 @@ export function ActionItemsPanel({
     regionId,
   });
   const updateStatus = useMutation(api.actionItems.updateStatus);
+  const updateIssueStatus = useMutation(api.issues.updateStatus);
+  const [resolvePromptIssueId, setResolvePromptIssueId] = useState<string | null>(null);
+
+  const handleMarkComplete = async (actionItemId: string, issueId?: string) => {
+    await updateStatus({ operatorId, actionItemId, status: "completed" });
+    // Check if all items for this issue are now complete
+    if (issueId && items) {
+      const sameIssueItems = items.filter((i: any) => i.issueId === issueId);
+      const remainingOpen = sameIssueItems.filter(
+        (i: any) => i.actionItemId !== actionItemId && i.status !== "completed"
+      );
+      if (remainingOpen.length === 0 && sameIssueItems.length > 0) {
+        setResolvePromptIssueId(issueId);
+      }
+    }
+  };
 
   return (
     <section className="panel-strong p-4">
@@ -77,19 +94,43 @@ export function ActionItemsPanel({
                 {item.status !== "completed" ? (
                   <button
                     type="button"
-                    onClick={() =>
-                      updateStatus({
-                        operatorId,
-                        actionItemId: item.actionItemId,
-                        status: "completed",
-                      })
-                    }
+                    onClick={() => handleMarkComplete(item.actionItemId, item.issueId)}
                     className="btn-secondary w-fit px-3 py-1.5 text-[11px]"
                   >
                     Mark complete
                   </button>
                 ) : null}
               </div>
+
+              {resolvePromptIssueId && resolvePromptIssueId === item.issueId ? (
+                <div className="mt-3 flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-3 py-2">
+                  <p className="flex-1 text-xs text-green-800">
+                    All actions for {item.issueId} complete. Resolve the issue?
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      updateIssueStatus({
+                        operatorId,
+                        issueId: resolvePromptIssueId,
+                        status: "resolved",
+                        resolutionNotes: "All action items completed.",
+                      });
+                      setResolvePromptIssueId(null);
+                    }}
+                    className="rounded-lg bg-green-600 px-3 py-1 text-[11px] font-medium text-white hover:bg-green-700"
+                  >
+                    Resolve
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setResolvePromptIssueId(null)}
+                    className="text-[11px] text-gray-400 hover:text-gray-600"
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              ) : null}
             </div>
           ))}
         </div>

@@ -39,6 +39,8 @@ function RegionalPageInner() {
   const [severityFilter, setSeverityFilter] = useState("all");
   const [storeFilter, setStoreFilter] = useState("all");
   const [selectedIssueId, setSelectedIssueId] = useState<string | null>(null);
+  const [delegatingIssueId, setDelegatingIssueId] = useState<string | null>(null);
+  const [delegateNotes, setDelegateNotes] = useState("");
 
   // Read store from URL params on mount
   useEffect(() => {
@@ -232,15 +234,18 @@ function RegionalPageInner() {
         <nav className="flex gap-4 border-b border-gray-200 pt-2">
           <TabButton active={activeView === "overview"} label="Overview" onClick={() => setActiveView("overview")} />
           <TabButton active={activeView === "intervene"} label="Intervene" onClick={() => setActiveView("intervene")} />
-          <TabButton active={activeView === "queue"} label="Queue" onClick={() => setActiveView("queue")} />
+          <TabButton active={activeView === "queue"} label={`Queue (${escalatedCount})`} onClick={() => setActiveView("queue")} />
         </nav>
 
         {/* ── Two-column body ─────────────────────────────── */}
-        <div className="mt-4 flex gap-5">
+        <div className="mt-4 flex flex-col gap-5 xl:flex-row">
           {/* LEFT COLUMN */}
           <div className="min-w-0 flex-1 space-y-4">
             {activeView === "overview" && (
               <>
+                {/* Cross-store pattern alerts */}
+                <PatternAlertBanner issues={openIssues} />
+
                 {/* Metric row */}
                 <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
                   <MetricBadge label="Open" value={summary?.openIssueCount ?? openIssues.length} />
@@ -415,96 +420,104 @@ function RegionalPageInner() {
               </>
             )}
 
-            {activeView === "queue" && (
-              <>
-                <div>
-                  <div className="flex items-center gap-2 pb-2">
-                    <select
-                      name="regionalIssueStoreFilter"
-                      value={storeFilter}
-                      onChange={(event) => setStoreFilter(event.target.value)}
-                      className="rounded border border-gray-200 bg-white px-2 py-1 text-xs outline-none"
-                    >
-                      <option value="all">All stores</option>
-                      <option value="regional">Regional-only</option>
-                      {stores?.map((s: any) => (
-                        <option key={s.storeId} value={s.storeId}>
-                          {s.storeId}
-                        </option>
-                      ))}
-                    </select>
-                    <select
-                      name="regionalIssueStatusFilter"
-                      value={statusFilter}
-                      onChange={(event) => setStatusFilter(event.target.value)}
-                      className="rounded border border-gray-200 bg-white px-2 py-1 text-xs outline-none"
-                    >
-                      <option value="all">All statuses</option>
-                      <option value="open">Open</option>
-                      <option value="in_progress">In progress</option>
-                      <option value="resolved">Resolved</option>
-                    </select>
-                    <select
-                      name="regionalIssueSeverityFilter"
-                      value={severityFilter}
-                      onChange={(event) => setSeverityFilter(event.target.value)}
-                      className="rounded border border-gray-200 bg-white px-2 py-1 text-xs outline-none"
-                    >
-                      <option value="all">All severities</option>
-                      <option value="critical">Critical</option>
-                      <option value="high">High</option>
-                      <option value="medium">Medium</option>
-                      <option value="low">Low</option>
-                    </select>
-                    <span className="ml-auto text-xs text-gray-400">{filteredIssues.length} shown</span>
+            {activeView === "queue" && (() => {
+              const escalatedIssues = (issues ?? []).filter((issue: any) => issue.escalatedToRegional && issue.status !== "resolved")
+                .sort((a: any, b: any) => {
+                  const order = { critical: 0, high: 1, medium: 2, low: 3 };
+                  return (
+                    (order[a.severity as keyof typeof order] ?? 4) -
+                    (order[b.severity as keyof typeof order] ?? 4)
+                  );
+                });
+              return (
+                <>
+                  <div>
+                    <p className="pb-2 text-xs text-gray-400">{escalatedIssues.length} escalated issue{escalatedIssues.length !== 1 ? "s" : ""} awaiting review</p>
+                    {!issues ? (
+                      <p className="py-6 text-center text-sm text-gray-400">Loading escalation queue...</p>
+                    ) : escalatedIssues.length === 0 ? (
+                      <p className="py-6 text-center text-sm text-gray-400">No escalated issues in the queue.</p>
+                    ) : (
+                      <div className="max-h-[700px] space-y-3 overflow-y-auto pr-1">
+                        {escalatedIssues.map((issue: any) => (
+                          <div key={issue._id} className="space-y-2">
+                            <IssueCard
+                              issue={issue}
+                              attachments={attachmentsByIssue[issue.issueId] ?? []}
+                              showStore
+                              onSelect={setSelectedIssueId}
+                              isSelected={selectedIssueId === issue.issueId}
+                            />
+                            <div className="flex items-center gap-2 pl-2">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  updateIssueStatus({
+                                    operatorId: operator.operatorId,
+                                    issueId: issue.issueId,
+                                    status: "in_progress",
+                                    resolutionNotes: "Accepted by regional manager.",
+                                  })
+                                }
+                                className="rounded-lg bg-indigo-600 px-3 py-1.5 text-[11px] font-medium text-white transition hover:bg-indigo-700"
+                              >
+                                Accept
+                              </button>
+                              {delegatingIssueId === issue.issueId ? (
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    type="text"
+                                    value={delegateNotes}
+                                    onChange={(e) => setDelegateNotes(e.target.value)}
+                                    placeholder="Delegation notes..."
+                                    className="rounded border border-gray-200 bg-white px-2 py-1.5 text-[11px] outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100"
+                                    onClick={(e) => e.stopPropagation()}
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      updateIssueStatus({
+                                        operatorId: operator.operatorId,
+                                        issueId: issue.issueId,
+                                        status: "in_progress",
+                                        resolutionNotes: `Delegated: ${delegateNotes || "Returned to store for resolution."}`,
+                                      });
+                                      setDelegatingIssueId(null);
+                                      setDelegateNotes("");
+                                    }}
+                                    className="rounded-lg bg-gray-800 px-3 py-1.5 text-[11px] font-medium text-white transition hover:bg-gray-900"
+                                  >
+                                    Confirm
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => { setDelegatingIssueId(null); setDelegateNotes(""); }}
+                                    className="text-[11px] text-gray-400 hover:text-gray-600"
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => setDelegatingIssueId(issue.issueId)}
+                                  className="btn-secondary px-3 py-1.5 text-[11px]"
+                                >
+                                  Delegate
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
-                  {!issues ? (
-                    <p className="py-6 text-center text-sm text-gray-400">Loading regional issues...</p>
-                  ) : filteredIssues.length === 0 ? (
-                    <p className="py-6 text-center text-sm text-gray-400">No issues match current filters.</p>
-                  ) : (
-                    <div className="max-h-[700px] space-y-3 overflow-y-auto pr-1">
-                      {filteredIssues
-                        .sort((a: any, b: any) => {
-                          const order = { critical: 0, high: 1, medium: 2, low: 3 };
-                          return (
-                            (order[a.severity as keyof typeof order] ?? 4) -
-                            (order[b.severity as keyof typeof order] ?? 4)
-                          );
-                        })
-                        .map((issue: any) => (
-                          <IssueCard
-                            key={issue._id}
-                            issue={issue}
-                            attachments={attachmentsByIssue[issue.issueId] ?? []}
-                            showStore
-                            onSelect={setSelectedIssueId}
-                            isSelected={selectedIssueId === issue.issueId}
-                            onResolve={(issueId) =>
-                              updateIssueStatus({
-                                operatorId: operator.operatorId,
-                                issueId,
-                                status: "resolved",
-                                resolutionNotes: "Resolved from regional command workspace.",
-                              })
-                            }
-                            onEscalate={(issueId) =>
-                              escalateIssue({
-                                operatorId: operator.operatorId,
-                                issueId,
-                              })
-                            }
-                          />
-                        ))}
-                    </div>
-                  )}
-                </div>
-
-                <ActionItemsPanel operatorId={operator.operatorId} title="Action items" regionId={REGION_ID} />
-                <RecentActivityPanel operatorId={operator.operatorId} regionId={REGION_ID} title="Activity" />
-              </>
-            )}
+                  <ActionItemsPanel operatorId={operator.operatorId} title="Action items" regionId={REGION_ID} />
+                  <RecentActivityPanel operatorId={operator.operatorId} regionId={REGION_ID} title="Activity" />
+                </>
+              );
+            })()}
           </div>
 
           {/* RIGHT COLUMN — Chat */}
@@ -589,6 +602,54 @@ function buildRegionalBrief({
   ];
 
   return { headline, summary, chips };
+}
+
+function PatternAlertBanner({ issues }: { issues: any[] }) {
+  if (!issues || issues.length === 0) return null;
+
+  const alerts: string[] = [];
+
+  // Group by issueType — if 3+ stores have the same type
+  const typeByStore: Record<string, Set<string>> = {};
+  for (const issue of issues) {
+    if (!typeByStore[issue.issueType]) typeByStore[issue.issueType] = new Set();
+    if (issue.storeId && issue.storeId !== "STR-ALL") {
+      typeByStore[issue.issueType].add(issue.storeId);
+    }
+  }
+  for (const [issueType, storeSet] of Object.entries(typeByStore)) {
+    if (storeSet.size >= 3) {
+      alerts.push(`${storeSet.size} stores reporting ${issueType.replace(/_/g, " ")} issues`);
+    }
+  }
+
+  // Group by affectedSku — if 2+ stores share the same SKU issue
+  const skuByStore: Record<string, Set<string>> = {};
+  for (const issue of issues) {
+    const sku = (issue as any).affectedSku;
+    if (!sku) continue;
+    if (!skuByStore[sku]) skuByStore[sku] = new Set();
+    if (issue.storeId && issue.storeId !== "STR-ALL") {
+      skuByStore[sku].add(issue.storeId);
+    }
+  }
+  for (const [sku, storeSet] of Object.entries(skuByStore)) {
+    if (storeSet.size >= 2) {
+      alerts.push(`${storeSet.size} stores affected by SKU ${sku}`);
+    }
+  }
+
+  if (alerts.length === 0) return null;
+
+  return (
+    <div className="space-y-2">
+      {alerts.map((alert, i) => (
+        <div key={i} className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-800">
+          <span className="font-semibold">Pattern detected:</span> {alert}
+        </div>
+      ))}
+    </div>
+  );
 }
 
 function WorkspaceAccessState({ title, message }: { title: string; message: string }) {

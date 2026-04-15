@@ -244,7 +244,7 @@ function StorePageInner() {
         </nav>
 
         {/* ── Two-column body ─────────────────────────────── */}
-        <div className="mt-4 flex gap-5">
+        <div className="mt-4 flex flex-col gap-5 xl:flex-row">
           {/* LEFT COLUMN */}
           <div className="min-w-0 flex-1 space-y-4">
             {activeView === "briefing" && (

@@ -42,6 +42,34 @@ interface IssueCardProps {
   isSelected?: boolean;
 }
 
+const SLA_HOURS: Record<string, number> = {
+  critical: 4,
+  high: 24,
+  medium: 72,
+  low: 168,
+};
+
+function getSlaStatus(severity: string, createdAt: string, status: string): { label: string; color: string } | null {
+  if (status === "resolved") return null;
+  const slaHours = SLA_HOURS[severity];
+  if (!slaHours) return null;
+  const now = new Date();
+  const created = new Date(createdAt);
+  const elapsedMs = Math.max(0, now.getTime() - created.getTime());
+  const elapsedHours = elapsedMs / (1000 * 60 * 60);
+  if (elapsedHours >= slaHours) {
+    const overdue = Math.round(elapsedHours - slaHours);
+    return { label: `SLA: ${overdue}h overdue`, color: "bg-red-100 text-red-700 border-red-200" };
+  }
+  const remaining = slaHours - elapsedHours;
+  const threshold = slaHours * 0.25;
+  if (remaining <= threshold) {
+    const remainingRound = Math.round(remaining);
+    return { label: `SLA: ${remainingRound}h left`, color: "bg-amber-100 text-amber-700 border-amber-200" };
+  }
+  return null;
+}
+
 export function IssueCard({
   issue,
   attachments = [],
@@ -52,6 +80,7 @@ export function IssueCard({
   isSelected,
 }: IssueCardProps) {
   const timeAgo = getTimeAgo(issue.createdAt);
+  const sla = getSlaStatus(issue.severity, issue.createdAt, issue.status);
 
   return (
     <article
@@ -88,7 +117,12 @@ export function IssueCard({
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-2 sm:max-w-[220px] sm:justify-end">
+        <div className="flex flex-wrap gap-2 sm:max-w-[260px] sm:justify-end">
+          {sla ? (
+            <span className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${sla.color}`}>
+              {sla.label}
+            </span>
+          ) : null}
           {issue.escalatedToRegional ? (
             <span className="rounded-full border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700">
               escalated

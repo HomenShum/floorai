@@ -32,7 +32,7 @@ export default function RootLayout({
         <ConvexClientProvider>
           <OperatorSessionProvider>
             <Sidebar />
-            <div className="ml-[220px]">{children}</div>
+            <div className="ml-0 md:ml-[220px]">{children}</div>
           </OperatorSessionProvider>
         </ConvexClientProvider>
       </body>
