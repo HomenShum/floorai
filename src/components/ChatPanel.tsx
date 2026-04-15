@@ -23,6 +23,7 @@ interface ChatPanelProps {
   onClearIssue?: () => void;
   operatorName?: string;
   sharedSessionId?: string;
+  embedded?: boolean;
 }
 
 type ParsedTrace = {
@@ -763,7 +764,7 @@ function buildRegionalGreeting(
   return `Here's your regional overview${regionId ? ` for ${regionId}` : ""}. ${openIssues.length} open issue${openIssues.length !== 1 ? "s" : ""} across stores. Ask about store performance, escalations, or cross-store patterns.`;
 }
 
-export function ChatPanel({ operatorId, storeId, regionId, issueContext, onClearIssue, operatorName, sharedSessionId }: ChatPanelProps) {
+export function ChatPanel({ operatorId, storeId, regionId, issueContext, onClearIssue, operatorName, sharedSessionId, embedded }: ChatPanelProps) {
   const scopeKey = storeId || regionId || "global";
   const [input, setInput] = useState("");
   const [files, setFiles] = useState<File[]>([]);
