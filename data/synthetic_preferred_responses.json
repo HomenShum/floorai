@@ -1,0 +1,68 @@
+[
+  {
+    "case_id": "vendor-delay-store",
+    "prompt": "I manage STR-101. Organic milk SKU-4411 has been out of stock for 3 days and DairyFresh missed two deliveries. What should I do next?",
+    "preferred_response": "Treat this as a vendor non-compliance escalation tied to ISS-001. Per POL-INV-003, document the missed deliveries from 2026-04-10 and 2026-04-12, contact the DairyFresh account rep within 24 hours, and escalate to the regional manager if there is no resolution within 48 hours. Because Elm Street is also affected through ISS-002, request emergency substitute supplier authorization now instead of waiting for a third miss. Communicate the temporary out-of-stock on SKU-4411 and track lost sales while the substitute source is arranged.",
+    "must_include": ["ISS-001", "ISS-002", "POL-INV-003", "SKU-4411", "DairyFresh", "emergency substitute supplier"]
+  },
+  {
+    "case_id": "staffing-saturday-callouts",
+    "prompt": "Harbor View has 3 call-outs for Saturday and bakery plus deli are uncovered. What is the right response?",
+    "preferred_response": "Handle this as ISS-003 under POL-HR-007. Approve overtime for the remaining associates up to the policy limit, contact neighboring stores for voluntary coverage, and call StaffNow if minimum coverage still cannot be met. If bakery or deli still cannot be staffed, close those service counters with signage rather than pretending they are open. Record the staffing incident within 24 hours and make the regional escalation explicit because the issue is already marked critical and escalated.",
+    "must_include": ["ISS-003", "POL-HR-007", "overtime", "neighboring stores", "StaffNow", "close those service counters"]
+  },
+  {
+    "case_id": "cooler-failure",
+    "prompt": "Riverside Commons has a walk-in cooler at 52 F with 8K dollars of perishables at risk. What should the manager do immediately?",
+    "preferred_response": "Treat this as ISS-004 and follow POL-MAINT-001. A 52 F cooler is outside the 35 to 38 F target range and above the 41 F cold-holding threshold, so start temperature checks and product evaluation immediately. Any product that has remained unsafe for 2 or more hours should be discarded, photographed, and documented. Because the primary vendor cannot arrive within 4 hours, use the emergency vendor authorization path now, and prepare an insurance claim because the at-risk loss exceeds the 2000 dollar reporting threshold.",
+    "must_include": ["ISS-004", "POL-MAINT-001", "52 F", "41 F", "2 or more hours", "insurance claim", "emergency vendor"]
+  },
+  {
+    "case_id": "health-inspection-prep",
+    "prompt": "Greenfield Plaza has a health inspection next week and still has log gaps, overdue thermometer calibration, and a missing pest control report. How should they prioritize?",
+    "preferred_response": "Treat this as ISS-005 and prioritize the POL-COMP-002 items that can trigger the biggest inspection risk first. Fix the handwashing log gaps immediately because the policy allows no gaps exceeding 4 hours, then calibrate the deli thermometer and document the results, then recover and file the March pest control report. The checklist should be completed 72 hours before the inspection date, so build a same-day owner list and request regional cleanup help if the store needs extra hands.",
+    "must_include": ["ISS-005", "POL-COMP-002", "handwashing log", "4 hours", "thermometer", "pest control", "72 hours"]
+  },
+  {
+    "case_id": "slip-and-fall",
+    "prompt": "A customer slipped near produce, mentioned calling an attorney, and security footage is preserved. What is the correct escalation?",
+    "preferred_response": "Treat this as ISS-007 and follow POL-SAFETY-001 without improvising. Preserve the footage, complete or confirm incident report IR-200 within 1 hour, photograph the scene if that has not already happened, and notify corporate legal within 4 hours. Because the customer mentioned an attorney, escalate immediately to both the regional manager and corporate legal. Do not admit fault when communicating with the customer.",
+    "must_include": ["ISS-007", "POL-SAFETY-001", "IR-200", "4 hours", "corporate legal", "do not admit fault"]
+  },
+  {
+    "case_id": "late-produce-delivery",
+    "prompt": "Westfield Junction got a produce truck 6 hours late and the refrigeration was marginal. Should they reject it, accept part, or take a discount claim?",
+    "preferred_response": "Handle this as ISS-012 under POL-INV-008. Because the truck was more than 4 hours late, every perishable should be temperature-checked immediately. Reject any items outside safe thresholds. If part of the load is acceptable, do a documented partial acceptance, mark accepted versus rejected items on the bill of lading, get the driver to sign the amended bill, and submit a photo-backed quality claim within 24 hours. Use the discount-claim path only for product that is still safe and saleable.",
+    "must_include": ["ISS-012", "POL-INV-008", "4 hours", "temperature-check", "partial acceptance", "bill of lading", "quality claim"]
+  },
+  {
+    "case_id": "bopis-phantom-inventory",
+    "prompt": "College Town Express has 4 BOPIS orders that cannot be filled because the system shows stock but the shelf is empty. What should the store do?",
+    "preferred_response": "Treat this as ISS-013 and use POL-ECOM-001. Contact each customer within 2 hours, offer a substitution or refund, and issue the 5 dollar digital coupon if a substitution is declined. Then correct the inventory count in the system and file an inventory variance report because this is phantom inventory. If this pattern repeats, request a cycle count for the affected category instead of treating each order as an isolated miss.",
+    "must_include": ["ISS-013", "POL-ECOM-001", "2 hours", "substitution or refund", "5 dollar digital coupon", "inventory variance report", "cycle count"]
+  },
+  {
+    "case_id": "organized-retail-crime",
+    "prompt": "Lakeside Fresh had three coordinated grab-and-run cosmetics thefts this week. What is the right operational response?",
+    "preferred_response": "Treat this as ISS-010 and anchor on POL-LP-003. Do not confront suspects. Make sure police reports and the loss-prevention incident report are filed, preserve and share suspect descriptions with neighboring stores, and request the anti-theft fixture assessment now because there have already been multiple incidents inside the 30-day trigger window. The answer should tie the request back to the 1200 dollar weekly loss exposure rather than treating it as a generic shrink issue.",
+    "must_include": ["ISS-010", "POL-LP-003", "do not confront", "police report", "anti-theft fixture assessment", "neighboring stores", "1200"]
+  },
+  {
+    "case_id": "regional-vendor-pattern",
+    "prompt": "As the regional manager, I see DairyFresh issues across multiple stores. What should the 30-day vendor review focus on?",
+    "preferred_response": "Treat this as ISS-018 and use POL-VENDOR-001. The review should compile delivery reliability data, fill rate, and quality rejections across the affected stores, issue a formal performance notice, and require a corrective action plan within 15 days. In parallel, prepare the backup supplier list for organic dairy so the region can activate temporary alternative sourcing if the vendor does not recover. The response should explicitly connect the review to the already-documented cross-store pattern around SKU-4411.",
+    "must_include": ["ISS-018", "POL-VENDOR-001", "delivery reliability", "fill rate", "corrective action plan", "backup supplier", "SKU-4411"]
+  },
+  {
+    "case_id": "shrinkage-action-plan",
+    "prompt": "Northeast shrinkage is running at 2.3 percent versus a 2.0 percent target and Lakeside is the outlier at 3.1 percent. What should the regional manager do?",
+    "preferred_response": "Treat this as ISS-019 and ground the answer in POL-LP-001. The region is 0.3 points above target and Lakeside is well above the 2.5 percent review threshold, so the immediate next steps are a store-by-store breakdown, an action plan for stores that are at least 0.5 points above target, and monthly LP audit cadence for stores above target rather than quarterly cadence. Lakeside should be called out for accelerated review, not folded into a generic regional summary.",
+    "must_include": ["ISS-019", "POL-LP-001", "2.3 percent", "2.0 percent", "3.1 percent", "action plan", "monthly LP audit"]
+  },
+  {
+    "case_id": "seasonal-hiring-forecast",
+    "prompt": "We need a summer hiring plan for all Northeast stores. What should the regional manager drive first?",
+    "preferred_response": "Treat this as ISS-020 and follow POL-HR-020. The first deadline is the store-by-store headcount forecast by April 15, followed by job postings by April 20 and at least two regional job fairs by May 1. The plan should also include onboarding by May 15 and the training sequence of POS certification in week 1 followed by department training in weeks 2 and 3. The response should prioritize timeline and capacity planning, not generic recruiting advice.",
+    "must_include": ["ISS-020", "POL-HR-020", "April 15", "April 20", "May 1", "May 15", "POS certification"]
+  }
+]

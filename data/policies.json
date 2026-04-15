@@ -1,0 +1,68 @@
+[
+  {
+    "policy_id": "POL-INV-003",
+    "title": "Vendor Non-Compliance Escalation",
+    "category": "inventory",
+    "content": "When a vendor misses 2 or more scheduled deliveries within 7 days: document each missed delivery with date and time, contact the vendor account representative within 24 hours, escalate to the Regional Manager if there is no resolution in 48 hours, authorize an emergency substitute supplier if needed, issue a formal written warning, and initiate a vendor performance review after repeated warnings."
+  },
+  {
+    "policy_id": "POL-HR-007",
+    "title": "Emergency Staffing Protocol",
+    "category": "hr",
+    "content": "When 30 percent or more of a scheduled shift calls out: approve up to 8 hours of overtime per remaining associate, contact neighboring stores for voluntary coverage, contact the regional temp staffing agency StaffNow at 800-555-0147 if still short, maintain minimum floor coverage by department, close bakery or deli counters if they cannot be staffed, and file an incident report within 24 hours."
+  },
+  {
+    "policy_id": "POL-MAINT-001",
+    "title": "Emergency Equipment Failure",
+    "category": "maintenance",
+    "content": "For cooler, freezer, oven, or other food-safety equipment failures: check temperature logs immediately, begin product evaluation if cold holding exceeds 41 F or hot holding drops below 135 F, discard products that remain above or below safe temperature for 2 or more hours, call any licensed HVAC vendor if the primary vendor cannot arrive within 4 hours, approve emergency spend up to 5000 dollars without regional approval and 15000 dollars with regional approval, and file an insurance claim for product loss above 2000 dollars."
+  },
+  {
+    "policy_id": "POL-COMP-002",
+    "title": "Health Inspection Readiness",
+    "category": "compliance",
+    "content": "Complete the pre-inspection checklist 72 hours before the visit. Verify handwashing logs without gaps exceeding 4 hours, calibrate all food thermometers and document the results, ensure pest control service reports are filed monthly, verify FIFO labeling, complete cleaning logs, and request regional support if extra cleanup help is needed."
+  },
+  {
+    "policy_id": "POL-SAFETY-001",
+    "title": "Incident Response Protocol",
+    "category": "safety",
+    "content": "For customer injury incidents: provide first aid if trained, call 911 if serious, complete incident report IR-200 within 1 hour, preserve security camera footage for at least 30 days, do not admit fault, notify corporate legal within 4 hours at legal@corp.com, immediately escalate if the customer mentions an attorney, and photograph the scene before cleanup."
+  },
+  {
+    "policy_id": "POL-INV-008",
+    "title": "Delivery Quality Rejection",
+    "category": "inventory",
+    "content": "When a delivery arrives late or with quality concerns: temperature-check perishables immediately with a calibrated thermometer, reject items outside safe thresholds, document accepted and rejected items on the bill of lading for partial acceptance, require the driver to sign the amended bill of lading, submit a quality claim within 24 hours with photos, inspect all perishables if the truck is 4 or more hours late, and accept with a discount claim up to 5000 dollars if appropriate."
+  },
+  {
+    "policy_id": "POL-ECOM-001",
+    "title": "BOPIS Fulfillment Failures",
+    "category": "ecommerce",
+    "content": "When an online pickup order cannot be fulfilled: contact the customer within 2 hours, offer a substitution or refund, issue a 5 dollar digital coupon if the customer declines a substitution, update the inventory system to match the physical count, file an inventory variance report for phantom inventory, and request a cycle count if the same problem repeats."
+  },
+  {
+    "policy_id": "POL-LP-003",
+    "title": "Organized Retail Crime Response",
+    "category": "loss_prevention",
+    "content": "For suspected organized retail theft: do not confront suspects, activate camera coverage, file a police report within 24 hours, submit a loss prevention incident report, request an anti-theft fixture assessment after 2 or more incidents in 30 days, approve fixture spend up to 3000 dollars per department with loss-prevention manager approval, and share suspect descriptions with neighboring stores."
+  },
+  {
+    "policy_id": "POL-VENDOR-001",
+    "title": "Vendor Performance Review",
+    "category": "vendor_management",
+    "content": "For a 30-day vendor performance review: compile delivery reliability metrics including on-time percentage, fill rate, and quality rejections, issue a formal performance notification, require a corrective action plan within 15 days, begin backup vendor qualification if performance does not improve within 60 days, and allow temporary alternative sourcing with Regional Manager approval."
+  },
+  {
+    "policy_id": "POL-LP-001",
+    "title": "Shrinkage Management",
+    "category": "loss_prevention",
+    "content": "Shrinkage target is 2.0 percent of sales. Stores exceeding target by 0.5 points or more require an action plan within 14 days. Audit frequency is quarterly at or below target, monthly above target, and regional LP review is required for stores exceeding 2.5 percent."
+  },
+  {
+    "policy_id": "POL-HR-020",
+    "title": "Seasonal Hiring Playbook",
+    "category": "hr",
+    "content": "Submit the summer headcount forecast by April 15, post jobs by April 20, hold at least two job fairs by May 1, target onboarding by May 15, and run POS certification in week 1 followed by department training in weeks 2 and 3."
+  }
+]

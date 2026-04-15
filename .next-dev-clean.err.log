@@ -1,0 +1,81 @@
+ ⨯ ./src/app/globals.css
+Module not found: Can't resolve 'D:\VSCode Projects\perficient_interview\src\app\globals.css'
+
+https://nextjs.org/docs/messages/module-not-found
+ ⨯ ./src/components/AttachmentList.tsx
+Error: 
+
+Caused by:
+    0: Failed to read source code from D:\VSCode Projects\perficient_interview\src\components\AttachmentList.tsx
+    1: The system cannot find the file specified. (os error 2)
+
+Import trace for requested module:
+./src/components/AttachmentList.tsx
+./src/components/ChatPanel.tsx
+./src/app/store/page.tsx
+ ⨯ ./src/components/AttachmentList.tsx
+Error: 
+
+Caused by:
+    0: Failed to read source code from D:\VSCode Projects\perficient_interview\src\components\AttachmentList.tsx
+    1: The system cannot find the file specified. (os error 2)
+
+Import trace for requested module:
+./src/components/AttachmentList.tsx
+./src/components/ChatPanel.tsx
+./src/app/regional/page.tsx
+ ⨯ ./src/components/IssueCard.tsx
+Error: 
+
+Caused by:
+    0: Failed to read source code from D:\VSCode Projects\perficient_interview\src\components\IssueCard.tsx
+    1: The system cannot find the file specified. (os error 2)
+
+Import trace for requested module:
+./src/components/IssueCard.tsx
+./src/app/store/page.tsx
+ ⨯ ./src/components/ActionItemsPanel.tsx
+Error: 
+
+Caused by:
+    0: Failed to read source code from D:\VSCode Projects\perficient_interview\src\components\ActionItemsPanel.tsx
+    1: The system cannot find the file specified. (os error 2)
+
+Import trace for requested module:
+./src/components/ActionItemsPanel.tsx
+./src/app/store/page.tsx
+ ⨯ ./src/components/IssueComposer.tsx
+Error: 
+
+Caused by:
+    0: Failed to read source code from D:\VSCode Projects\perficient_interview\src\components\IssueComposer.tsx
+    1: The system cannot find the file specified. (os error 2)
+
+Import trace for requested module:
+./src/components/IssueComposer.tsx
+./src/app/store/page.tsx
+ ⨯ ./src/components/ChatPanel.tsx
+Error: 
+
+Caused by:
+    0: Failed to read source code from D:\VSCode Projects\perficient_interview\src\components\ChatPanel.tsx
+    1: The system cannot find the file specified. (os error 2)
+
+Import trace for requested module:
+./src/components/ChatPanel.tsx
+./src/app/store/page.tsx
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ ⨯ ReferenceError: useState is not defined
+    at RegionalPage (src\app\regional\page.tsx:24:43)
+  22 |     operatorProfile?.role === "regional_manager" &&
+  23 |     operatorProfile.regionIds.includes(REGION_ID);
+> 24 |   const [statusFilter, setStatusFilter] = useState("all");
+     |                                           ^
+  25 |   const [severityFilter, setSeverityFilter] = useState("all");
+  26 |   const [storeFilter, setStoreFilter] = useState("all");
+  27 | {
+  digest: '1379165783'
+}
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload

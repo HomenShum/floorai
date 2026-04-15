@@ -1,0 +1,223 @@
+
+> store-ops-assistant@0.1.0 dev
+> next dev --port 3002
+
+   ▲ Next.js 15.5.15
+   - Local:        http://localhost:3002
+   - Network:      http://192.168.1.106:3002
+   - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 1684ms
+ ○ Compiling /store ...
+ ✓ Compiled /store in 2.7s (823 modules)
+ GET /store 200 in 3538ms
+ ✓ Compiled in 783ms (315 modules)
+ ✓ Compiled /icon.svg in 363ms (525 modules)
+ GET /icon.svg?e85ce6662e75b14f 200 in 590ms
+ ○ Compiling / ...
+ ✓ Compiled / in 558ms (815 modules)
+ GET / 200 in 1156ms
+ ✓ Compiled /regional in 439ms (822 modules)
+ GET /regional 200 in 838ms
+ ✓ Compiled in 1922ms (861 modules)
+ GET /regional 200 in 232ms
+ ✓ Compiled in 556ms (843 modules)
+ ✓ Compiled in 382ms (323 modules)
+ GET /regional 200 in 398ms
+ GET /regional 200 in 47ms
+ ✓ Compiled in 673ms (823 modules)
+ GET /regional 200 in 588ms
+ GET /regional 200 in 40ms
+ ✓ Compiled in 741ms (823 modules)
+ GET /regional 200 in 610ms
+ GET /regional 200 in 39ms
+ ✓ Compiled in 523ms (837 modules)
+ GET /regional 200 in 123ms
+ ✓ Compiled in 451ms (837 modules)
+ GET /regional 200 in 131ms
+ ✓ Compiled in 615ms (837 modules)
+ GET /regional 200 in 155ms
+ ✓ Compiled in 540ms (837 modules)
+ GET /regional 200 in 157ms
+ ✓ Compiled in 637ms (837 modules)
+ GET /regional 200 in 164ms
+ ✓ Compiled in 581ms (837 modules)
+ GET /regional 200 in 139ms
+ ✓ Compiled in 703ms (828 modules)
+ GET /regional 200 in 563ms
+ GET /regional 200 in 43ms
+ ✓ Compiled in 472ms (814 modules)
+ GET /regional 200 in 100ms
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 990ms (691 modules)
+ GET /regional 404 in 1076ms
+ GET /regional 404 in 308ms
+ GET /regional 404 in 275ms
+ ○ Compiling /regional ...
+ ✓ Compiled /regional in 844ms (819 modules)
+ GET /regional 200 in 852ms
+ GET /regional 200 in 47ms
+ ✓ Compiled / in 275ms (825 modules)
+ GET /regional 200 in 495ms
+ GET / 200 in 873ms
+ ○ Compiling /store ...
+ ✓ Compiled /store in 588ms (834 modules)
+ GET /store 200 in 1042ms
+ GET /regional 200 in 93ms
+ GET /store 200 in 132ms
+ ✓ Compiled in 667ms (323 modules)
+ ✓ Compiled in 736ms (832 modules)
+ ✓ Compiled in 409ms (826 modules)
+ ✓ Compiled in 467ms (826 modules)
+ ✓ Compiled in 436ms (826 modules)
+ ✓ Compiled in 592ms (840 modules)
+ ✓ Compiled in 457ms (840 modules)
+ ✓ Compiled in 466ms (840 modules)
+ ✓ Compiled in 240ms (323 modules)
+ ✓ Compiled in 594ms (831 modules)
+ ✓ Compiled in 456ms (817 modules)
+ ✓ Compiled in 324ms (265 modules)
+ ✓ Compiled in 313ms (265 modules)
+ ✓ Compiled in 288ms (279 modules)
+ ✓ Compiled in 231ms (279 modules)
+ ✓ Compiled in 218ms (279 modules)
+ ✓ Compiled in 196ms (279 modules)
+ ✓ Compiled in 293ms (279 modules)
+ ✓ Compiled in 194ms (279 modules)
+ ✓ Compiled in 239ms (279 modules)
+ ○ Compiling / ...
+ ✓ Compiled / in 760ms (807 modules)
+ GET / 200 in 1314ms
+ GET / 200 in 83ms
+ ✓ Compiled /icon.svg in 299ms (523 modules)
+ GET /icon.svg?e85ce6662e75b14f 200 in 463ms
+ ○ Compiling /store ...
+ ✓ Compiled /store in 736ms (845 modules)
+ GET /store 200 in 931ms
+ GET / 200 in 270ms
+ ○ Compiling /regional ...
+ ✓ Compiled /regional in 569ms (835 modules)
+ GET /regional 200 in 1010ms
+ GET /store 200 in 95ms
+ GET /store 200 in 82ms
+ GET /regional 200 in 77ms
+ ✓ Compiled in 463ms (849 modules)
+ GET /regional 200 in 109ms
+ ✓ Compiled in 418ms (849 modules)
+ GET /regional 200 in 114ms
+ ✓ Compiled in 397ms (849 modules)
+ GET /regional 200 in 103ms
+ GET /regional 200 in 130ms
+ ✓ Compiled /icon.svg in 358ms (540 modules)
+ GET /icon.svg?e85ce6662e75b14f 200 in 563ms
+ ✓ Compiled in 741ms (849 modules)
+ GET /regional 200 in 299ms
+ ✓ Compiled in 488ms (849 modules)
+ GET /regional 200 in 193ms
+ ✓ Compiled in 642ms (849 modules)
+ GET /regional 200 in 140ms
+ ✓ Compiled in 680ms (849 modules)
+ GET /regional 200 in 109ms
+ ✓ Compiled in 630ms (849 modules)
+ GET /regional 500 in 756ms
+ ✓ Compiled /icon.svg in 430ms (540 modules)
+ GET /icon.svg?e85ce6662e75b14f 200 in 597ms
+ ✓ Compiled in 539ms (866 modules)
+ GET /regional 200 in 794ms
+ GET /icon.svg?e85ce6662e75b14f 200 in 31ms
+ ✓ Compiled in 455ms (866 modules)
+ GET /regional 200 in 148ms
+ ✓ Compiled in 611ms (866 modules)
+ GET /regional 200 in 98ms
+ GET /store 200 in 248ms
+ GET /regional 200 in 80ms
+ GET / 200 in 122ms
+ GET /store 200 in 35ms
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 1860ms (845 modules)
+ GET /store 404 in 1923ms
+ GET /store 404 in 56ms
+ GET /store 404 in 218ms
+ ✓ Compiled in 912ms (826 modules)
+ ○ Compiling /store ...
+ ✓ Compiled /store in 939ms (835 modules)
+ GET /store 200 in 1189ms
+ GET / 200 in 300ms
+ GET /store 200 in 44ms
+ GET /store 200 in 104ms
+ ✓ Compiled /icon.svg in 463ms (540 modules)
+ GET /icon.svg?e85ce6662e75b14f 200 in 701ms
+ GET / 200 in 102ms
+ GET / 200 in 196ms
+ ✓ Compiled in 948ms (859 modules)
+ GET / 200 in 191ms
+ GET / 200 in 198ms
+ ✓ Compiled in 893ms (828 modules)
+ GET / 200 in 332ms
+ ○ Compiling /regional ...
+ ✓ Compiled /regional in 974ms (849 modules)
+ GET / 200 in 437ms
+ GET /regional 200 in 1488ms
+ GET / 200 in 84ms
+ GET /regional 200 in 36ms
+ ✓ Compiled in 1093ms (849 modules)
+ GET /regional 200 in 242ms
+ ✓ Compiled in 713ms (849 modules)
+ GET /regional 200 in 139ms
+ GET /regional 200 in 309ms
+ ✓ Compiled /icon.svg in 249ms (540 modules)
+ GET /icon.svg?e85ce6662e75b14f 200 in 456ms
+ GET /regional 200 in 296ms
+ GET /icon.svg?e85ce6662e75b14f 200 in 11ms
+ ✓ Compiled in 1617ms (849 modules)
+ GET /regional 200 in 340ms
+ ✓ Compiled in 789ms (849 modules)
+ GET /regional 200 in 247ms
+ ✓ Compiled in 962ms (849 modules)
+ GET /regional 200 in 211ms
+ GET /regional 200 in 351ms
+ ✓ Compiled /icon.svg in 268ms (540 modules)
+ GET /icon.svg?e85ce6662e75b14f 200 in 493ms
+ ✓ Compiled in 198ms (312 modules)
+ ✓ Compiled in 3.9s (1371 modules)
+ GET /regional 200 in 758ms
+ ✓ Compiled in 845ms (1371 modules)
+ GET /regional 200 in 191ms
+ ✓ Compiled in 624ms (1371 modules)
+ GET /regional 200 in 91ms
+ ✓ Compiled in 586ms (1371 modules)
+ GET /regional 200 in 90ms
+ GET /regional 200 in 353ms
+ ✓ Compiled /icon.svg in 394ms (805 modules)
+ GET /icon.svg?e85ce6662e75b14f 200 in 564ms
+ ✓ Compiled in 908ms (1371 modules)
+ GET /regional 200 in 319ms
+ GET /regional 200 in 303ms
+ ✓ Compiled /icon.svg in 232ms (805 modules)
+ GET /icon.svg?e85ce6662e75b14f 200 in 396ms
+ ✓ Compiled in 603ms (1388 modules)
+ GET /regional 200 in 131ms
+ GET /regional 200 in 276ms
+ GET /icon.svg?e85ce6662e75b14f 200 in 16ms
+ ✓ Compiled in 636ms (1388 modules)
+ GET /regional 200 in 113ms
+ GET /regional 200 in 268ms
+ GET /icon.svg?e85ce6662e75b14f 200 in 15ms
+ ✓ Compiled in 1185ms (1371 modules)
+ GET /regional 200 in 352ms
+ ✓ Compiled in 569ms (1371 modules)
+ GET /regional 200 in 708ms
+ ✓ Compiled /icon.svg in 247ms (805 modules)
+ GET /icon.svg?e85ce6662e75b14f 200 in 407ms
+ GET /regional 200 in 334ms
+ ✓ Compiled in 839ms (1371 modules)
+ GET /regional 200 in 344ms
+   Reload env: .env.local
+ ✓ Compiled in 6.7s (1389 modules)
+ GET /regional 200 in 498ms
+ GET /regional 200 in 3863ms
+ ○ Compiling /icon.svg ...
+ ✓ Compiled /icon.svg in 1019ms (805 modules)
+ GET /icon.svg?e85ce6662e75b14f 200 in 1193ms
+[?25h

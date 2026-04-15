@@ -1,0 +1,322 @@
+[
+  {
+    "id": "EVAL-001",
+    "scenario": "Store manager asks about the organic milk delivery issue",
+    "role": "store_manager",
+    "storeId": "STR-101",
+    "query": "What's happening with our milk delivery?",
+    "required_references": ["ISS-001", "SKU-4411", "DairyFresh Co", "POL-INV-003"],
+    "preferred_response": "ISS-001: Horizon Organic 64oz whole milk (SKU-4411) has been out of stock for 3 days. DairyFresh Co missed scheduled deliveries on 4/10 and 4/12. Current stock: 0 units (reorder point: 30). Per policy POL-INV-003 (Vendor Non-Compliance Escalation): (1) Document each missed delivery with date/time, (2) Contact DairyFresh account rep within 24 hours, (3) Since 2+ deliveries missed, escalate to Regional Manager for emergency substitute supplier authorization. Note: Elm Street Market (STR-102, ISS-002) reports the same DairyFresh issue — this is a systemic vendor problem. Estimated revenue impact: $480.",
+    "criteria": {
+      "must_mention_issue_id": true,
+      "must_reference_policy": true,
+      "must_provide_action_steps": true,
+      "must_mention_cross_store_pattern": true,
+      "must_mention_revenue_impact": true
+    }
+  },
+  {
+    "id": "EVAL-002",
+    "scenario": "Store manager facing Saturday staffing crisis",
+    "role": "store_manager",
+    "storeId": "STR-103",
+    "query": "We're short-staffed today, 3 people called out. What should I do?",
+    "required_references": ["ISS-003", "POL-HR-007"],
+    "preferred_response": "ISS-003 is already tracking this: 3 associates called out for Saturday shift, leaving 4 of 7. Per POL-HR-007 (Emergency Staffing Protocol): (1) You're authorized to approve up to 8 hours overtime per remaining associate, (2) Contact neighboring stores for voluntary coverage, (3) If still short, call regional temp staffing agency StaffNow at 800-555-0147, (4) Minimum floor coverage: 1 associate per department, (5) If bakery/deli can't be staffed, close service counters and post signage. File incident report within 24 hours. This has been escalated to regional. Estimated revenue impact: $2,200.",
+    "criteria": {
+      "must_mention_issue_id": true,
+      "must_reference_policy": true,
+      "must_provide_action_steps": true,
+      "must_mention_cross_store_pattern": false,
+      "must_mention_revenue_impact": true
+    }
+  },
+  {
+    "id": "EVAL-003",
+    "scenario": "Store manager with critical cooler failure",
+    "role": "store_manager",
+    "storeId": "STR-104",
+    "query": "Our walk-in cooler is at 52 degrees, what do I do?",
+    "required_references": ["ISS-004", "POL-MAINT-001"],
+    "preferred_response": "ISS-004: Walk-in cooler #2 reading 52F (safe range: 35-38F). ~$8K dairy/produce at risk. Per POL-MAINT-001 (Emergency Equipment Failure): (1) Check temperature logs immediately, (2) Products above 41F for 2+ hours must be discarded — document and photograph, (3) You're authorized to call any licensed HVAC vendor if CoolTech unavailable within 4 hours, (4) Emergency spend limit: $5,000 without regional approval, $15,000 with, (5) File insurance claim for product loss exceeding $2,000. This has been escalated to regional.",
+    "criteria": {
+      "must_mention_issue_id": true,
+      "must_reference_policy": true,
+      "must_provide_action_steps": true,
+      "must_mention_cross_store_pattern": false,
+      "must_mention_revenue_impact": true
+    }
+  },
+  {
+    "id": "EVAL-004",
+    "scenario": "Store manager preparing for health inspection",
+    "role": "store_manager",
+    "storeId": "STR-101",
+    "query": "We have a health inspection next week. What do I need to prepare?",
+    "required_references": ["ISS-005", "POL-COMP-002"],
+    "preferred_response": "ISS-005: Health inspector visit confirmed for 4/18. Three items still open: (1) Employee handwashing log gaps for 4/8-4/10, (2) Thermometer calibration overdue in deli, (3) March pest control report not filed. Per POL-COMP-002 (Health Inspection Readiness), complete 72 hours before visit: verify food handler certifications, check handwashing logs (no gaps >4 hours), calibrate all thermometers, verify pest control reports filed monthly, walk storage areas for FIFO, check cleaning schedules. Regional support available — request merchandising team for deep clean.",
+    "criteria": {
+      "must_mention_issue_id": true,
+      "must_reference_policy": true,
+      "must_provide_action_steps": true,
+      "must_mention_cross_store_pattern": false,
+      "must_mention_revenue_impact": false
+    }
+  },
+  {
+    "id": "EVAL-005",
+    "scenario": "Store manager handling customer slip-and-fall",
+    "role": "store_manager",
+    "storeId": "STR-106",
+    "query": "A customer fell near produce and mentioned calling a lawyer. What's the process?",
+    "required_references": ["ISS-007", "POL-SAFETY-001"],
+    "preferred_response": "ISS-007 documents this incident. Per POL-SAFETY-001 (Incident Response Protocol): (1) Provide first aid if trained, call 911 if serious, (2) Complete incident report IR-200 within 1 hour, (3) Preserve security camera footage — 30-day hold minimum, (4) DO NOT admit fault or liability, (5) Since customer mentioned attorney, escalate IMMEDIATELY to Regional Manager AND corporate legal (legal@corp.com) within 4 hours, (6) Photograph scene before cleanup. This has already been escalated to regional.",
+    "criteria": {
+      "must_mention_issue_id": true,
+      "must_reference_policy": true,
+      "must_provide_action_steps": true,
+      "must_mention_cross_store_pattern": false,
+      "must_mention_revenue_impact": false
+    }
+  },
+  {
+    "id": "EVAL-006",
+    "scenario": "Store manager dealing with organized retail theft",
+    "role": "store_manager",
+    "storeId": "STR-107",
+    "query": "We keep getting hit by shoplifters in cosmetics. Third time this week.",
+    "required_references": ["ISS-010", "POL-LP-003"],
+    "preferred_response": "ISS-010: Third coordinated grab-and-run in cosmetics, ~$1,200 losses this week. Per POL-LP-003 (Organized Retail Crime Response): (1) Do NOT confront suspects, (2) Activate camera recording, (3) Police reports filed (#PR-2026-4412, #PR-2026-4418), (4) After 2+ incidents in 30 days, request anti-theft fixture assessment — budget up to $3,000/department with LP approval, (5) Share suspect descriptions with neighboring stores via LP network. Escalated to regional. Note: Q2 shrinkage (ISS-019) shows your store at 3.1% vs 2.0% target — this is contributing to the regional shrinkage issue.",
+    "criteria": {
+      "must_mention_issue_id": true,
+      "must_reference_policy": true,
+      "must_provide_action_steps": true,
+      "must_mention_cross_store_pattern": true,
+      "must_mention_revenue_impact": true
+    }
+  },
+  {
+    "id": "EVAL-007",
+    "scenario": "Store manager with late delivery quality question",
+    "role": "store_manager",
+    "storeId": "STR-108",
+    "query": "Our delivery came 6 hours late and the produce looks bad. Should I accept it?",
+    "required_references": ["ISS-012", "POL-INV-008"],
+    "preferred_response": "ISS-012: Delivery arrived 11AM vs scheduled 5AM. Per POL-INV-008 (Delivery Quality Rejection): (1) Temperature-check ALL perishables immediately since truck was 4+ hours late, (2) Reject items exceeding safe temperature, (3) For partial acceptance: document accepted vs rejected on BOL, photograph rejected items, (4) Driver must sign amended BOL, (5) Submit quality claim with photos within 24 hours. You're authorized to accept with discount claim up to $5,000. Estimated at-risk value: $3,500.",
+    "criteria": {
+      "must_mention_issue_id": true,
+      "must_reference_policy": true,
+      "must_provide_action_steps": true,
+      "must_mention_cross_store_pattern": false,
+      "must_mention_revenue_impact": true
+    }
+  },
+  {
+    "id": "EVAL-008",
+    "scenario": "Store manager with BOPIS fulfillment failures",
+    "role": "store_manager",
+    "storeId": "STR-105",
+    "query": "Customers are arriving for online orders but we don't have the items. What do I do?",
+    "required_references": ["ISS-013", "POL-ECOM-001"],
+    "preferred_response": "ISS-013: 4 BOPIS orders unfulfillable — system shows in-stock but shelves empty (phantom inventory). Per POL-ECOM-001 (BOPIS Fulfillment Failures): (1) Contact each customer within 2 hours, (2) Offer substitution or full refund + $5 digital coupon, (3) Update inventory system to reflect actual count, (4) File inventory variance report for phantom inventory, (5) If 3+ phantom inventory incidents in 7 days, request cycle count. Estimated impact: $280.",
+    "criteria": {
+      "must_mention_issue_id": true,
+      "must_reference_policy": true,
+      "must_provide_action_steps": true,
+      "must_mention_cross_store_pattern": false,
+      "must_mention_revenue_impact": true
+    }
+  },
+  {
+    "id": "EVAL-009",
+    "scenario": "Store manager asking about competitor response",
+    "role": "store_manager",
+    "storeId": "STR-107",
+    "query": "A new competitor opened across the street and we're losing foot traffic. What can we do?",
+    "required_references": ["ISS-016", "POL-PRICING-001"],
+    "preferred_response": "ISS-016: FreshMart opened 4/5 across the street. 10-15% foot traffic drop observed. Price comparison on 20 staples shows we're 8-22% higher on 14 items. Per POL-PRICING-001 (Competitive Response Protocol): (1) Conduct full price comparison on top 50 KVI items within 7 days, (2) Submit to Regional Manager with revenue impact estimate, (3) Regional may authorize targeted price matches on up to 20 items, (4) Monitor foot traffic weekly for 90 days, (5) Do NOT match below cost — loss-leader pricing requires VP approval. Estimated weekly impact: $5,000. This has been escalated to regional.",
+    "criteria": {
+      "must_mention_issue_id": true,
+      "must_reference_policy": true,
+      "must_provide_action_steps": true,
+      "must_mention_cross_store_pattern": false,
+      "must_mention_revenue_impact": true
+    }
+  },
+  {
+    "id": "EVAL-010",
+    "scenario": "Store manager checking resolved issue for reference",
+    "role": "store_manager",
+    "storeId": "STR-106",
+    "query": "We had a fire exit issue before. What happened and how was it resolved?",
+    "required_references": ["ISS-014", "POL-SAFETY-005", "QuickShip Logistics"],
+    "preferred_response": "ISS-014 (resolved): Delivery crew left 4 pallets blocking rear fire exit on 4/9. Resolution: pallets cleared in 45 minutes, vendor QuickShip Logistics issued written warning, photo documentation filed, added to delivery SOP checklist. Per POL-SAFETY-005: this was the second violation in 30 days, which triggers a written warning. A third violation within 90 days would trigger vendor contract review. Ensure opening/closing walks include exit checks.",
+    "criteria": {
+      "must_mention_issue_id": true,
+      "must_reference_policy": true,
+      "must_provide_action_steps": true,
+      "must_mention_cross_store_pattern": false,
+      "must_mention_revenue_impact": false
+    }
+  },
+  {
+    "id": "EVAL-011",
+    "scenario": "Regional manager investigating DairyFresh cross-store pattern",
+    "role": "regional_manager",
+    "regionId": "REG-NE",
+    "query": "I'm seeing multiple stores report DairyFresh delivery issues. What's the full picture?",
+    "required_references": ["ISS-001", "ISS-002", "ISS-018", "STR-101", "STR-102", "POL-VENDOR-001"],
+    "preferred_response": "Cross-store pattern confirmed across 3 issues: ISS-001 (Greenfield Plaza STR-101, 0 units, $480 impact), ISS-002 (Elm Street STR-102, 8 units left, $360 impact), ISS-018 (your regional tracking issue, $4,200 total impact). DairyFresh Co missed deliveries at both stores on 4/10 and 4/12. Per POL-VENDOR-001: (1) Compile delivery reliability data, (2) Issue formal performance notification, (3) Vendor has 15 days for corrective action plan, (4) If no improvement in 60 days, begin backup vendor qualification, (5) You can authorize emergency alternative sourcing immediately. Recommended: activate backup supplier for organic dairy NOW.",
+    "criteria": {
+      "must_mention_issue_id": true,
+      "must_reference_policy": true,
+      "must_provide_action_steps": true,
+      "must_mention_cross_store_pattern": true,
+      "must_mention_revenue_impact": true
+    }
+  },
+  {
+    "id": "EVAL-012",
+    "scenario": "Regional manager analyzing shrinkage trends",
+    "role": "regional_manager",
+    "regionId": "REG-NE",
+    "query": "Our shrinkage numbers are trending above target. What's driving it?",
+    "required_references": ["ISS-019", "ISS-010", "STR-107", "POL-LP-001"],
+    "preferred_response": "ISS-019: Regional shrinkage at 2.3% vs 2.0% target (15% above). Lakeside Fresh (STR-107) is the outlier at 3.1%. Primary driver: ISS-010 reports organized retail theft in cosmetics — $1,200 in losses this week alone, third coordinated grab-and-run. Per POL-LP-001: (1) Stores exceeding target by 0.5%+ need action plan within 14 days, (2) Accelerate LP audit frequency to monthly for stores above target, (3) Prioritize fixture investment for top shrinkage categories at STR-107, (4) Review all stores exceeding 2.5% quarterly. Recommended: focus LP resources on STR-107 cosmetics department immediately. Estimated annual impact at current rate: $45,000.",
+    "criteria": {
+      "must_mention_issue_id": true,
+      "must_reference_policy": true,
+      "must_provide_action_steps": true,
+      "must_mention_cross_store_pattern": true,
+      "must_mention_revenue_impact": true
+    }
+  },
+  {
+    "id": "EVAL-013",
+    "scenario": "Regional manager planning summer hiring",
+    "role": "regional_manager",
+    "regionId": "REG-NE",
+    "query": "Summer is coming, what's our seasonal hiring plan?",
+    "required_references": ["ISS-020", "POL-HR-020"],
+    "preferred_response": "ISS-020: Summer volume starts mid-May. Need 40-50 seasonal hires across 8 stores. Per POL-HR-020 (Seasonal Hiring Playbook): (1) Submit headcount forecast to Regional by April 15 (tomorrow!), (2) Job postings live by April 20, (3) Coordinate minimum 2 regional job fairs by May 1, (4) Target all seasonal hires onboarded by May 15, (5) Training batch schedule: POS week 1, department weeks 2-3. Last year started 4/15 and still had June gaps — need to move faster this year. Seasonal associates eligible for permanent conversion after 90 days.",
+    "criteria": {
+      "must_mention_issue_id": true,
+      "must_reference_policy": true,
+      "must_provide_action_steps": true,
+      "must_mention_cross_store_pattern": false,
+      "must_mention_revenue_impact": false
+    }
+  },
+  {
+    "id": "EVAL-014",
+    "scenario": "Store manager asking for daily status overview",
+    "role": "store_manager",
+    "storeId": "STR-101",
+    "query": "Give me a summary of everything I need to deal with today.",
+    "required_references": ["ISS-001", "ISS-005", "ISS-015"],
+    "preferred_response": "Greenfield Plaza (STR-101) has 3 open issues: (1) ISS-001 [HIGH] Organic milk shortage — DairyFresh missed 2 deliveries, 0 units in stock, $480 impact. Escalated to regional. (2) ISS-005 [MEDIUM, in_progress] Health inspection prep — 3 checklist items open, inspection 4/18 (4 days away). (3) ISS-015 [LOW] ADA accommodation request — employee needs standing desk mat and modified lifting. Need HR guidance. Priority: ISS-005 is most time-sensitive (72-hour prep window). Also: inventory shows SKU-4412 (Organic Valley 2%) at 5 units vs 25 reorder point — related to the DairyFresh issue.",
+    "criteria": {
+      "must_mention_issue_id": true,
+      "must_reference_policy": false,
+      "must_provide_action_steps": true,
+      "must_mention_cross_store_pattern": false,
+      "must_mention_revenue_impact": true
+    }
+  },
+  {
+    "id": "EVAL-015",
+    "scenario": "Store manager checking inventory status",
+    "role": "store_manager",
+    "storeId": "STR-102",
+    "query": "What inventory items are we running low on?",
+    "required_references": ["SKU-4411", "SKU-7823", "SKU-4412"],
+    "preferred_response": "Elm Street Market (STR-102) low stock items: (1) SKU-4411 Horizon Organic Milk 64oz: 8 units vs 30 reorder point (DairyFresh Co delivery issue — see ISS-002), (2) SKU-4412 Organic Valley 2% Milk: 3 units vs 25 reorder point (same supplier), (3) SKU-7823 Claritin 24hr: 0 units vs 10 reorder point (vendor-managed display, Johnson Distribution missed restock — see ISS-008). Action: DairyFresh issues escalated to regional. For Claritin, per POL-INV-005 wait 48 hours then contact vendor rep.",
+    "criteria": {
+      "must_mention_issue_id": false,
+      "must_reference_policy": true,
+      "must_provide_action_steps": true,
+      "must_mention_cross_store_pattern": false,
+      "must_mention_revenue_impact": false
+    }
+  },
+  {
+    "id": "EVAL-016",
+    "scenario": "Store manager looking up a specific policy",
+    "role": "store_manager",
+    "storeId": "STR-104",
+    "query": "What's our policy on self-checkout equipment failures?",
+    "required_references": ["POL-IT-002"],
+    "preferred_response": "Per POL-IT-002 (POS System Escalation): (1) Restart terminal first — fixes 60% of issues, (2) If restart fails, submit IT ticket (Priority: High for payment processing, Medium for peripherals), (3) SLA: 4-hour response for High, 24-hour for Medium, (4) If no response within SLA, call IT escalation: 800-555-0199, (5) For widespread outage (3+ terminals), activate manual backup procedures. Note: ISS-011 reports SCO lanes 3 and 5 have card reader errors, IT ticket #IT-88421 open since 4/8 with no response — this has exceeded the 24-hour SLA. Recommend calling escalation line.",
+    "criteria": {
+      "must_mention_issue_id": true,
+      "must_reference_policy": true,
+      "must_provide_action_steps": true,
+      "must_mention_cross_store_pattern": false,
+      "must_mention_revenue_impact": false
+    }
+  },
+  {
+    "id": "EVAL-017",
+    "scenario": "Regional manager comparing stores",
+    "role": "regional_manager",
+    "regionId": "REG-NE",
+    "query": "Which stores have the most critical issues right now?",
+    "required_references": ["STR-103", "STR-104", "STR-108"],
+    "preferred_response": "Stores with critical issues: (1) STR-103 Harbor View: ISS-003 — 3 Saturday call-outs, bakery/deli unstaffed, $2,200 impact, (2) STR-104 Riverside Commons: ISS-004 — walk-in cooler at 52F, $8,000 perishables at risk, (3) STR-108 Westfield Junction: ISS-012 — warehouse delivery 6 hours late, produce quality compromised, $3,500 at risk. STR-104 is highest priority due to food safety urgency and dollar value. Recommend: authorize emergency HVAC vendor for STR-104 immediately.",
+    "criteria": {
+      "must_mention_issue_id": true,
+      "must_reference_policy": false,
+      "must_provide_action_steps": true,
+      "must_mention_cross_store_pattern": true,
+      "must_mention_revenue_impact": true
+    }
+  },
+  {
+    "id": "EVAL-018",
+    "scenario": "Regional manager triaging escalations",
+    "role": "regional_manager",
+    "regionId": "REG-NE",
+    "query": "What escalations are waiting for my attention?",
+    "required_references": ["ISS-001", "ISS-002", "ISS-003", "ISS-004", "ISS-007", "ISS-010", "ISS-012", "ISS-016"],
+    "preferred_response": "8 issues escalated to regional: CRITICAL: (1) ISS-004 Walk-in cooler STR-104 — $8K at risk, needs emergency vendor auth, (2) ISS-003 Staffing STR-103 — Saturday shift crisis, (3) ISS-012 Late delivery STR-108 — $3.5K produce at risk. HIGH: (4) ISS-001/ISS-002 DairyFresh vendor failure — cross-store pattern, (5) ISS-007 Slip-and-fall STR-106 — legal notification needed, (6) ISS-010 ORC STR-107 — $1.2K losses, (7) ISS-016 Competitor response STR-107 — $5K weekly impact. Recommended triage order: ISS-004 (food safety) > ISS-007 (legal timeline) > ISS-003 (active crisis) > ISS-012 > vendor issues.",
+    "criteria": {
+      "must_mention_issue_id": true,
+      "must_reference_policy": false,
+      "must_provide_action_steps": true,
+      "must_mention_cross_store_pattern": true,
+      "must_mention_revenue_impact": true
+    }
+  },
+  {
+    "id": "EVAL-019",
+    "scenario": "Store manager asking about ADA accommodation process",
+    "role": "store_manager",
+    "storeId": "STR-101",
+    "query": "An employee submitted an ADA accommodation request for a standing mat. How do I handle it?",
+    "required_references": ["ISS-015", "POL-HR-015"],
+    "preferred_response": "ISS-015: Long-term associate (12 years) requesting standing desk mat and modified lifting. Per POL-HR-015 (ADA Accommodation Process): (1) Accept the request in writing — do NOT evaluate merit at store level, (2) Forward to HR within 48 hours at accommodation@corp.com, (3) HR initiates interactive process within 5 business days, (4) Since ergonomic equipment under $500: you can approve the standing desk mat at store level immediately, (5) Modified duty assignments require HR approval. Recommended: order the standing mat now and forward the full request to HR.",
+    "criteria": {
+      "must_mention_issue_id": true,
+      "must_reference_policy": true,
+      "must_provide_action_steps": true,
+      "must_mention_cross_store_pattern": false,
+      "must_mention_revenue_impact": false
+    }
+  },
+  {
+    "id": "EVAL-020",
+    "scenario": "Store manager with new hire training issue",
+    "role": "store_manager",
+    "storeId": "STR-103",
+    "query": "My new hires still can't use the registers. The training system was down.",
+    "required_references": ["ISS-009", "POL-HR-012"],
+    "preferred_response": "ISS-009: Two new hires started 4/7, training system down 4/7-4/9, currently bagging only. Per POL-HR-012 (New Hire Certification Timeline): (1) POS certification required within 5 business days of start (deadline was 4/14 — today), (2) For system outages, contact IT help desk #IT-HELP and document, (3) Manager may extend deadline by up to 3 days for system issues, (4) New hires may NOT work independently until POS-certified. Action: extend deadline to 4/17 (3-day extension for system outage), prioritize register training this week before weekend rush.",
+    "criteria": {
+      "must_mention_issue_id": true,
+      "must_reference_policy": true,
+      "must_provide_action_steps": true,
+      "must_mention_cross_store_pattern": false,
+      "must_mention_revenue_impact": false
+    }
+  }
+]
