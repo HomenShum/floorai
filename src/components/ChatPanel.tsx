@@ -765,6 +765,10 @@ function buildRegionalGreeting(
   return `Here's your regional overview${regionId ? ` for ${regionId}` : ""}. ${openIssues.length} open issue${openIssues.length !== 1 ? "s" : ""} across stores. Ask about store performance, escalations, or cross-store patterns.`;
 }
 
+function buildSharedGreeting(): string {
+  return "This is the shared operator channel. Ask for a daily watch, region-wide risks, or a grounded summary of the current conversation and uploaded evidence.";
+}
+
 export function ChatPanel({ operatorId, storeId, regionId, issueContext, onClearIssue, operatorName, sharedSessionId, embedded }: ChatPanelProps) {
   const chatPagePathname = usePathname();
   const scopeKey = storeId || regionId || "global";
@@ -1027,7 +1031,11 @@ export function ChatPanel({ operatorId, storeId, regionId, issueContext, onClear
                 <>
                   <h2 className="text-sm font-semibold text-slate-900">AI Assistant</h2>
                   <p className="mt-0.5 text-xs text-slate-500">
-                    {storeId ? `Store: ${storeId}` : `Region: ${regionId || "All"}`}
+                    {sharedSessionId && !storeId && !regionId
+                      ? "Shared channel session"
+                      : storeId
+                        ? `Store: ${storeId}`
+                        : `Region: ${regionId || "All"}`}
                   </p>
                 </>
               )}
@@ -1045,7 +1053,11 @@ export function ChatPanel({ operatorId, storeId, regionId, issueContext, onClear
             <TelemetryCard
               label="Mode"
               primary="Session retained"
-              secondary="Scoped to current workspace"
+              secondary={
+                sharedSessionId && !storeId && !regionId
+                  ? "Scoped to shared channel"
+                  : "Scoped to current workspace"
+              }
             />
             <TelemetryCard
               label="Last run"
@@ -1076,9 +1088,11 @@ export function ChatPanel({ operatorId, storeId, regionId, issueContext, onClear
                 <p className="mt-1 text-sm leading-6 text-slate-600">
                   {issueContext
                     ? `Thread for ${issueContext.issueId}. Ask about status, policy, or next steps for this issue.`
-                    : storeId
-                      ? buildStoreGreeting(storeId, staffingData, storeMetrics)
-                      : buildRegionalGreeting(regionId, regionalIssues)}
+                    : sharedSessionId && !storeId && !regionId
+                      ? buildSharedGreeting()
+                      : storeId
+                        ? buildStoreGreeting(storeId, staffingData, storeMetrics)
+                        : buildRegionalGreeting(regionId, regionalIssues)}
                 </p>
               </div>
               <div className="grid gap-2">

@@ -1,0 +1,24 @@
+{
+  "name": "video",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "studio": "npx remotion studio src/index.ts --port 3789",
+    "render": "npx remotion render src/index.ts FloorAIDemo out/FloorAIDemo.mp4 --port 3789",
+    "build": "npx remotion render src/index.ts FloorAIDemo out/FloorAIDemo.mp4 --port 3789"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@remotion/bundler": "^4.0.448",
+    "@remotion/cli": "^4.0.448",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "remotion": "^4.0.448",
+    "typescript": "^6.0.2"
+  }
+}

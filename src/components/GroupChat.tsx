@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useAction, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 
-const SHARED_SESSION = "group-chat-general";
+export const SHARED_GROUP_SESSION = "group-chat-general";
 const AVATAR_COLORS = [
   "bg-indigo-500",
   "bg-emerald-500",
@@ -44,7 +44,7 @@ export function GroupChat({ operatorId, operatorName }: GroupChatProps) {
   const chat = useAction(api.agent.chat);
   const messages = useQuery(api.messages.getBySession, {
     operatorId,
-    sessionId: SHARED_SESSION,
+    sessionId: SHARED_GROUP_SESSION,
   });
 
   useEffect(() => {
@@ -61,7 +61,7 @@ export function GroupChat({ operatorId, operatorName }: GroupChatProps) {
       await chat({
         operatorId,
         query,
-        sessionId: SHARED_SESSION,
+        sessionId: SHARED_GROUP_SESSION,
         senderName: operatorName,
       });
     } catch (err: any) {

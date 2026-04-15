@@ -1,561 +1,1157 @@
-# FloorAI — Retail Operations Intelligence
+# FloorAI
 
-> Floor-level AI for store and regional operations management.
-> Built for the Perficient AI Prototype Challenge.
+Retail operations assistant for store managers and regional managers, built with Next.js, Convex, and Gemini.
 
-**Live:** [getfloorai.vercel.app](https://getfloorai.vercel.app)
-**Stack:** Next.js 15 · Convex · Gemini 3.1 Pro · Google Search Grounding · Inter
+This repo is the working prototype and interview artifact for a retail operations AI challenge. The core idea is simple: operators do not need a generic chatbot. They need a workspace that can read current issue state, company policy, uploaded evidence, cross-store context, and follow-up ownership, then return grounded guidance with traceability.
 
----
+Related docs:
+- [PLAN.md](PLAN.md)
+- [INTERVIEW_WALKTHROUGH.md](INTERVIEW_WALKTHROUGH.md)
 
-## Table of Contents
+## What Shipped
 
-1. [What This Is](#what-this-is)
-2. [How It Was Built — Session Transcript](#session-transcript)
-3. [Prompt Evolution](#prompt-evolution)
-4. [Recommended Starting Prompt](#recommended-starting-prompt)
-5. [Architecture](#architecture)
-6. [Agent Design](#agent-design)
-7. [Evaluation Framework](#evaluation-framework)
-8. [Key Design Decisions & Tradeoffs](#key-design-decisions--tradeoffs)
-9. [Real User Scenarios](#real-user-scenarios)
-10. [Interview Walkthrough Guide](#interview-walkthrough-guide)
-11. [New Developer Guide](#new-developer-guide)
-12. [Future Work](#future-work)
+- Store manager workspace for single-store issue intake, evidence upload, grounded chat, and action tracking
+- Regional manager workspace for cross-store triage, escalation handling, risk scanning, and daily-watch style review
+- Shared `/chat` surface with a centered group channel plus the expandable agent rail
+- Gemini-powered assistant with internal Convex tools plus Google Search grounding when current external facts matter
+- Durable streaming chat via `messageEvents`
+- Answer packets, quality checks, trace metadata, and persisted eval runs
+- Golden-dataset evaluation against live agent behavior
 
----
+## Product At A Glance
 
-## What This Is
+```text
+USER WORKSPACES
+---------------
+/                operator session picker
+/store           single-store command view
+/regional        cross-store regional command view
+/chat            shared group chat
 
-FloorAI is a prototype operations control layer for retail grocery chains (think Trader Joe's / Walmart Neighborhood Market). It serves two personas:
+BACKEND
+-------
+Convex tables: issues, policies, inventory, staffing, files, messages,
+messageEvents, actionItems, answerPackets, evalRuns, evalCases, eventLogs
 
-- **Store Managers** see their store's issues, get AI-powered resolution guidance grounded in company policy, and track action items.
-- **Regional Managers** see all stores, detect cross-store patterns, triage escalations, and coordinate follow-up across the region.
+AGENT
+-----
+Gemini 3.1 Pro Preview
+  -> internal tool calls
+  -> Google Search grounding
+  -> streamed events
+  -> answer packet + quality checks
 
-The AI agent uses Gemini 3.1 Pro with function calling to query internal databases (issues, inventory, policies, staffing) and Google Search for external context, then delivers structured, policy-backed responses with quality gates.
-
----
-
-## Session Transcript
-
-This project was built in a single Claude Code session. Below are the key prompts (paraphrased from the session), in order, showing how the project evolved from zero to deployed product.
-
-### Phase 1: Planning (Prompt 1-3)
-
-**Prompt 1** — The user shared the Perficient AI Prototype Challenge brief and chose the "Retail: Store Operations Assistant" scenario. They specified the tech stack (Convex, Google Gemini, agent SDK), two UI personas (store manager, regional manager), and asked for a plan with synthetic data.
-
-> "DIRECTION: We are going with the Scenarios for Retail: Store Operations Assistant, spin up a prototype at the end, plan for now... generate synthetic dataset (ie CSV file of 20 test cases)... give me your recommendations as well but make sure to explain why"
-
-**Prompt 2** — Asked to set up the project with all dependencies and explain the synthetic data architecture with ASCII diagrams.
-
-> "Set up pgvector, google gemini, agent sdk, UI... key to set up in convex env... dogfood after UI is ready... explain how we are setting up the synthetic data, explain with ASCII diagrams"
-
-**Prompt 3** — Stack pivot: move from `@google/generative-ai` to `@convex-dev/agent` + `@ai-sdk/google`, use `gemini-3-flash` or newer, add Google Search grounding, reference LangChain Deep Agents architecture.
-
-### Phase 2: Build & Iterate (Prompts 4-8)
-
-**Prompt 4** — "do what you need and let's start dogfood locally as both the store manager and the regional manager in parallel" — Full deployment to Convex cloud, database seeding, Next.js startup, and live browser verification of both UIs.
-
-**Prompt 5** — Fix markdown rendering, trace UX, source handling, and streaming. "how do we fix it root cause wise, and how can we do streaming delta display rather than just waiting" — Led to the durable streaming architecture with `messageEvents` table.
-
-**Prompt 6** — "address model-quality work" — Added structured Convex retrieval layer (`briefs.ts`), deterministic answer path for high-confidence cases, coverage gates, runtime quality checks.
-
-**Prompt 7** — "regarding both single issue and broader multi-issue synthesis quality; how do we address from root cause" — Full agent architecture documentation, evidence contracts, typed worker outputs, runtime validation.
-
-**Prompt 8** — "implement fully end to end" — Answer packets, persisted eval runs, quality-gated streaming, audit trail.
-
-### Phase 3: Review & Polish (Prompts 9-14)
-
-**Prompt 9** — Comprehensive code review identifying P0/P1/P2 issues across error recovery, type safety, quality check accuracy, streaming race conditions, doc-vs-code gaps.
-
-**Prompt 10** — "Finish it all and deploy so I can share the url to my interviewer" — Fixed P0s (word-boundary regex, access guards, escapeForRegex helper), deployed to Vercel, set up `getfloorai.vercel.app` alias.
-
-**Prompt 11** — "I want new inspiration for even more modern compact minimal user mental model" — UI redesign discussion. User chose Linear + Slack hybrid layout.
-
-**Prompt 12** — Full page rewrites: removed warm glass-panel aesthetic, added Linear sidebar, underline tabs, compact metrics, two-column layout with issues left / chat right.
-
-**Prompt 13** — "implement and make sure works like Linear+Slack" — Issue threading (click issue -> dedicated chat thread), sidebar store switching via URL params, daily brief greeting, per-issue persistent sessions.
-
-**Prompt 14** — "how does every feature we verified so far truthfully cater to all real world scenarios" — Honest assessment of gaps. Led to implementing 9 additional features: shift-aware greeting, sidebar store filtering, mobile responsive, SLA timers, escalation queue, pattern alerts, action-issue linking, past resolution surfacing, vendor contacts.
-
-### Phase 4: Ship (Prompts 15-17)
-
-**Prompt 15** — GitHub repo creation, group chat feature, deploy verification.
-
-**Prompt 16** — "does that mean that we can have group chat as different people" — Built standalone GroupChat component with shared session, sender attribution, avatar initials.
-
-**Prompt 17** — "the groupchatpanel should be completely separated... write down the exact prompt... write a final recommended coding agent prompt" — This README.
-
----
-
-## Prompt Evolution
-
-The prompts evolved through four distinct phases:
-
-```
-Phase 1: PLAN         "Here's the challenge, here's the stack, plan it"
-  |                    Result: PLAN.md, synthetic data, architecture decisions
-  v
-Phase 2: BUILD        "Set it up, dogfood, fix root causes"
-  |                    Result: Working prototype, streaming, quality gates
-  v
-Phase 3: REVIEW       "Does this actually work for real users?"
-  |                    Result: 9 additional features, honest gap analysis
-  v
-Phase 4: SHIP         "Deploy, share URL, write docs"
-                       Result: Vercel + GitHub + README
+EVALUATION
+----------
+golden_dataset.json
+  -> live agent run
+  -> judge scores + reference coverage
+  -> persisted evalRuns / evalCases
 ```
 
-**What went well:**
-- Giving the full challenge brief upfront with stack preferences saved multiple rounds of clarification
-- "Fix it root cause wise" forced architectural solutions instead of patches
-- "How does every feature truthfully cater to real world scenarios" produced the most valuable output — the honest gap analysis that drove 9 features
+## Demo Collateral
 
-**What went poorly:**
-- The initial UI was over-designed (warm glass panels, paper textures) and had to be completely rewritten
-- Multiple deploy key format issues wasted time
-- ChatPanel was designed as a fixed sidebar, making it impossible to reuse for group chat — had to build GroupChat from scratch
-- Not specifying "Linear + Slack layout" from the start led to 3 UI rewrites
+The repo now includes updated presentation and demo-video assets that match the current product, not the older prototype framing.
 
----
+| Asset | Path | What it is for |
+| --- | --- | --- |
+| Interview slide deck | [slides/presentation.html](slides/presentation.html) | Three-slide pitch deck for the live interview |
+| Remotion source | [video/src](video/src) | Editable source for the narrated product demo |
+| Rendered video | [video/out/FloorAIDemo.mp4](video/out/FloorAIDemo.mp4) | Shareable walkthrough video |
 
-## Recommended Starting Prompt
+```text
+COLLATERAL FLOW
+---------------
+slides/presentation.html
+  -> live interview deck
 
-If starting this project over, this single prompt would have produced a better result faster:
-
-```
-I'm building a prototype for a retail operations AI assistant interview challenge.
-
-CONTEXT:
-- Interview is [date]. Need a shareable deployed URL.
-- Scenario: Regional retail manager needs fast answers when issues arise across
-  multiple store locations. Takes a question/issue, pulls internal policies and
-  historical data, provides actionable guidance.
-
-STACK DECISIONS (non-negotiable):
-- Convex for real-time DB (subscriptions, file storage, vector search)
-- Google Gemini 3.1 Pro for the agent (function calling + Google Search grounding)
-- @convex-dev/agent for agent orchestration
-- Next.js 15 App Router for frontend
-- Deploy to Vercel + Convex cloud
-
-UI REQUIREMENTS:
-- Linear-style layout: fixed left sidebar (220px) with nav + store list
-- Two views: Store Manager (single-store) and Regional Manager (multi-store)
-- Issues displayed as Linear-style list rows, sorted by severity
-- AI chat as a Slack-style right panel with issue threading
-  (click an issue -> dedicated chat thread for that issue)
-- Separate /chat page with centered Slack-style group chat
-- Mobile responsive with hamburger menu
-- Inter font, flat white/gray, indigo accents, no decorative effects
-
-AGENT REQUIREMENTS:
-- 4 tools: searchIssues, lookupInventory, lookupPolicy, searchPastResolutions
-- Google Search grounding for external context
-- Deterministic answer path for single tracked issues (no LLM needed)
-- Fallback to Gemini synthesis for complex/multi-issue queries
-- Every response must reference specific IDs (ISS-001, POL-INV-003, SKU-4411)
-- Quality gates: check primary issue ref, governing policy ref, action steps,
-  cross-store patterns, revenue impact
-- Durable streaming via messageEvents table (not blocking wait)
-
-DATA:
-- Create synthetic dataset: 20 issues across 8 stores, 18 company policies,
-  40 inventory items, staffing records
-- Golden evaluation dataset: 20 test queries with preferred responses and
-  required references for automated scoring
-- Eval harness that runs the live agent (not mocked) and scores with LLM judge
-
-REAL-WORLD FEATURES:
-- Operator session system with role-based access control
-- SLA timers on issues (4h critical, 24h high, 72h medium)
-- Cross-store pattern detection (auto-alert when 3+ stores report same issue type)
-- Escalation queue with Accept/Delegate workflow
-- Shift-aware daily greeting using live staffing data
-- Action item tracking with issue-resolution linking
-
-DEPLOYMENT:
-- Vercel for frontend, Convex cloud for backend
-- GitHub repo with comprehensive README
-- Shareable URL for interviewer
-
-Build everything, deploy, verify in browser, then write the README.
+video/src/*
+  -> remotion composition
+  -> video/out/FloorAIDemo.mp4
 ```
 
-This prompt encodes all the lessons learned across 17 iterations into a single starting point.
+## Why This Design
 
----
+This project was built around real retail operations workflows rather than a generic prompt-demo pattern.
+
+The design targets two operator realities:
+
+1. A store manager needs a fast, scoped answer about one store without being flooded by regional noise.
+2. A regional manager needs multi-store synthesis, escalation context, and a way to spot patterns before they turn into repeated losses.
+
+That drove the main product decisions:
+
+- separate store and regional workspaces
+- role-scoped access checks
+- issue-linked evidence uploads
+- action items as first-class records
+- chat as an operator rail, not the whole UI
+- evaluation against preferred operational responses, not just "the model said something plausible"
 
 ## Architecture
 
-```
-┌──────────────────────────────────────────────────────────┐
-│                    Next.js 15 Frontend                   │
-│                                                          │
-│  /              Home (operator session picker)           │
-│  /store         Store Manager (Linear issue list + chat) │
-│  /regional      Regional Manager (multi-store + chat)    │
-│  /chat          Group Chat (Slack-style shared channel)  │
-│                                                          │
-│  Components: Sidebar, IssueCard, ChatPanel, GroupChat,   │
-│              ActionItemsPanel, IssueComposer             │
-└───────────────────────┬──────────────────────────────────┘
-                        │ Convex React hooks
-                        │ (useQuery, useMutation, useAction)
-┌───────────────────────┴──────────────────────────────────┐
-│                    Convex Backend                        │
-│                                                          │
-│  Schema: users, stores, issues, inventory, policies,     │
-│          staffing, resolutions, messages, messageEvents,  │
-│          actionItems, files, answerPackets, evalRuns,     │
-│          evalCases, eventLogs                            │
-│                                                          │
-│  Modules: agent.ts (2000+ lines)                        │
-│           briefs.ts (scoped evidence retrieval)          │
-│           eval.ts (golden dataset evaluation)            │
-│           access.ts (role-based access control)          │
-│           + 12 domain modules                           │
-│                                                          │
-│  Agent Component: @convex-dev/agent (thread management)  │
-└───────────────────────┬──────────────────────────────────┘
-                        │ REST API
-┌───────────────────────┴──────────────────────────────────┐
-│              Google Gemini 3.1 Pro Preview               │
-│                                                          │
-│  Function calling: 8 tools                              │
-│  Google Search grounding: external context              │
-│  Structured output: JSON plans                          │
-└──────────────────────────────────────────────────────────┘
-```
-
----
-
-## Agent Design
-
-### Execution Pipeline
-
-```
-User query
-    │
-    ▼
-1. SETUP: Load operator profile, enforce access, load recent messages
-    │
-    ▼
-2. EVIDENCE: getAgentBrief() — ranked issues, policies, inventory, staffing
-    │
-    ▼
-3. PLAN: Gemini Flash Lite generates JSON execution plan (6+ tool steps)
-    │
-    ▼
-4. EXECUTE: Loop up to 5 turns of Gemini function calling
-    │   ├── searchIssues → issues table
-    │   ├── lookupInventory → inventory table
-    │   ├── lookupPolicy → policies table (full-text search)
-    │   ├── searchPastResolutions → resolutions table
-    │   ├── getStoreMetrics → operations module
-    │   ├── getRegionalSummary → operations module
-    │   ├── createActionItem → actionItems table
-    │   ├── createIssue → issues table
-    │   └── googleSearch → external grounding
-    │
-    ▼
-5. SYNTHESIZE: Deterministic path (single issue + policy) OR Gemini fallback
-    │
-    ▼
-6. QUALITY: 6 automated checks (primary issue, policy, action steps,
-    │         revenue impact, cross-store pattern, unsupported refs)
-    │
-    ▼
-7. PERSIST: answerPacket + audit event + stream to UI via messageEvents
+```text
+NEXT.JS APP
+  |
+  |-- /store      store operations workspace
+  |-- /regional   regional operations workspace
+  |-- /chat       shared channel / group chat
+  |
+  v
+CONVEX
+  |
+  |-- core data
+  |     issues / policies / inventory / staffing / resolutions / files
+  |
+  |-- chat runtime
+  |     messages / messageEvents / answerPackets
+  |
+  |-- quality runtime
+  |     evalRuns / evalCases / eventLogs
+  |
+  v
+AGENT RUNTIME
+  |
+  |-- [convex/briefs.ts](convex/briefs.ts)
+  |     scoped evidence retrieval
+  |
+  |-- [convex/agent.ts](convex/agent.ts)
+  |     planning, tool execution, synthesis, streaming, trace, quality
+  |
+  |-- Gemini 3.1 Pro Preview
+  |     internal tool calling + googleSearch
+  |
+  v
+OPERATOR RAIL
+  |
+  |-- streamed text deltas
+  |-- plan summary
+  |-- executed steps
+  |-- telemetry
+  |-- sources
+  |-- quality checks
 ```
 
-### Deterministic vs Fallback Path
+## Design Tradeoffs
 
-```
-IF single matched issue
-   AND governing policy found
-   AND no external search needed
-THEN → Deterministic answer (template-rendered, no LLM)
-       Sections: What / Policy / Actions / Escalation / Revenue
+This section is the "why" behind the stack, not just a list of what is in the repo today.
 
-ELSE → Gemini synthesis (temperature 0.3, brief as context)
-       Coverage check → regenerate if key refs missing
-```
+### 1. Canonical data plane vs vector-first stack
 
-### Streaming Architecture
+```text
+WHAT THIS APP NEEDS MOST
+------------------------
+1. Realtime operational state
+2. Scoped access control
+3. File + issue + action-item locality
+4. Reviewable agent traces and eval artifacts
+5. Good-enough retrieval for policies and past resolutions
 
-```
-agent.ts                    messages table              ChatPanel
-    │                            │                          │
-    ├── createDraftAssistant ──► │ status: "streaming"     │
-    │                            │                      ◄── useQuery subscribes
-    ├── appendStreamEvent ─────► messageEvents table       │
-    │   (plan.created,           │                      ◄── useQuery subscribes
-    │    step.started,           │                          │
-    │    step.finished,          │                          │ renders:
-    │    sources.updated)        │                          │  - live text
-    │                            │                          │  - trace steps
-    ├── syncDraft(appendText) ──►│ content grows           │  - sources
-    │   (80-char chunks, 18ms)   │                      ◄── │  - quality badge
-    │                            │                          │
-    ├── syncDraft(completed) ───►│ status: "completed"     │
-    │                            │                          │
-    └── persistAnswerPacket      answerPackets table        │
+THAT PUSHES THE DECISION TOWARD
+-------------------------------
+canonical app backend first
+vector engine second
 ```
 
----
+| Option | What it is good at | What it costs | Fit for this app |
+| --- | --- | --- | --- |
+| `Convex` | Realtime app state, queries, mutations, actions, storage, scope enforcement, eval artifacts in one backend | Vector search is less retrieval-specialized than dedicated vector systems | Best prototype and product fit because the operational system of record mattered more than having the most advanced vector engine |
+| `Postgres + pgvector` | Structured SQL joins plus vectors in one database, mature relational tooling | You still need realtime subscriptions, streaming state, storage coordination, and app wiring around it | Strong if the whole product standardizes on Postgres, but less attractive once the rest of the app already lives in Convex |
+| `Chroma` | Fast local RAG iteration, lightweight document search, easy experimentation | Another moving part, weaker as the canonical operational backend | Good for retrieval experiments, not the best center of gravity for this product |
+| `Pinecone` | Managed vector infrastructure, serverless scaling, strong retrieval focus | Separate control plane, extra cost center, metadata freshness and join complexity against the app database | Best when retrieval scale dominates the architecture; overkill for this prototype's workflow |
+| `Qdrant` | Strong dense plus sparse search, advanced metadata filtering, flexible deployment | Another service to run and reason about, more retrieval engineering up front | The most attractive dedicated vector option here if retrieval becomes the bottleneck later |
 
-## Evaluation Framework
+Why the current repo stayed Convex-first:
 
-### Golden Dataset
+- the app is fundamentally an operational workspace, not a retrieval product
+- issue state, action items, files, audit logs, streamed message events, and eval artifacts all benefit from living in the same backend
+- the retrieval corpus is important, but it is supporting evidence rather than the whole product
 
-20 test cases in `data/golden_dataset.json`. Each case has:
+### 2. Deterministic vs single-call LLM vs harnessed agent
 
-```json
-{
-  "id": "EVAL-001",
-  "scenario": "Store manager asks about organic milk delivery issue",
-  "role": "store_manager",
-  "storeId": "STR-101",
-  "query": "What's happening with our milk delivery?",
-  "required_references": ["ISS-001", "SKU-4411", "DairyFresh Co", "POL-INV-003"],
-  "preferred_response": "ISS-001: Horizon Organic 64oz (SKU-4411)...",
-  "criteria": {
-    "must_mention_issue_id": true,
-    "must_reference_policy": true,
-    "must_provide_action_steps": true,
-    "must_mention_cross_store_pattern": true,
-    "must_mention_revenue_impact": true
-  }
-}
+```text
+2023-2024 COMMON PATTERN
+------------------------
+prompt everything to one strong model
+  -> hidden reasoning
+  -> react-style tool loop
+  -> final answer
+
+BETTER FIT FOR THIS APP
+-----------------------
+classify
+  -> retrieve bounded evidence
+  -> call tools explicitly
+  -> synthesize only when needed
+  -> validate references before finalizing
 ```
 
-### Two-Layer Scoring
+| Approach | Latency / cost | Strengths | Weaknesses | Best use here |
+| --- | --- | --- | --- | --- |
+| Deterministic renderer | Lowest | Fast, cheap, reliable, easy to audit | Brittle if the case is ambiguous or spans multiple issues | Tracked single-issue cases with known policy packet and known action steps |
+| Single LLM call | Low to medium | Simple to ship, flexible, fewer moving parts | Easy to hallucinate, weak traceability, weak replayability, weak policy control | Good for early prototypes, not ideal for high-trust operations |
+| Harnessed planner + tool calls | Medium | Explicit steps, inspectable trace, better grounding, easier quality gates | More engineering effort | Best current default for this app |
+| Orchestrator-worker graph | Medium to high | Better multi-issue decomposition, parallel subwork, cleaner context management | More runtime complexity and stronger observability needs | Best next step for regional multi-issue synthesis |
 
+Root-cause takeaway:
+
+- single-issue quality improves when the assistant writes from a canonical issue packet, not a broad context blob
+- multi-issue quality improves when retrieval and ranking are decomposed into typed steps before synthesis
+- modern "agentic" quality comes less from hidden chain-of-thought and more from explicit intermediate state
+
+### 3. Gemini 3.1 Pro Preview vs cheaper faster model paths
+
+This repo is currently wired around `gemini-3.1-pro-preview`, but the workflow does not require that class of model for every turn.
+
+```text
+CHEAPEST PATH
+-------------
+deterministic render
+  -> known issue
+  -> known policy
+  -> known action template
+
+DEFAULT PATH
+------------
+flash / flash-lite style model
+  -> classify
+  -> plan tool order
+  -> summarize tool results
+
+EXPENSIVE PATH
+--------------
+pro-class model
+  -> ambiguous cases
+  -> broader regional synthesis
+  -> web-grounded synthesis
+  -> multimodal evidence review
 ```
-AUTOMATED (deterministic, fast):
-  - String match: required_references present in response
-  - Regex: ISS-\d{3}, POL-[A-Z]+-\d{3}, numbered action steps
-  - Result: refScore (0-100%)
 
-LLM JUDGE (semantic, Gemini 3.1 Pro):
-  - Compares actual vs golden preferred response
-  - Scores 1-5: accuracy, actionability, policy_compliance,
-                 completeness, groundedness
-  - Persisted in evalCases table
+| Path | Relative latency | Relative cost | What it is best at | Recommendation for this app |
+| --- | --- | --- | --- | --- |
+| Deterministic path | Lowest | Lowest | Exact known operational guidance | Use whenever the app already has a high-confidence issue + policy packet |
+| Flash / Flash-Lite planner path | Lower | Lower | Classification, routing, extraction, planning tool order, concise summaries | This should handle a large share of day-to-day store and regional queries in production |
+| Pro-class synthesis path | Higher | Higher | Ambiguity, nuanced synthesis, messy cross-issue prioritization, richer multimodal reasoning | Reserve for hard regional synthesis and cases where cheaper paths fail confidence checks |
+
+Why this workflow probably did not need the strongest model for every request:
+
+- many store questions are really retrieval plus policy application problems
+- daily watch summaries are often aggregation and templating problems
+- operator trust depends more on exact references than eloquence
+- chained tool calls plus evidence packets can outperform a single expensive model turn on structured operational tasks
+
+### 4. Where LangChain, LangGraph, Deep Agents, and Langfuse fit
+
+| Layer | What it does | How it fits this repo |
+| --- | --- | --- |
+| `LangChain` | Model and tool abstraction layer | Useful if the team wants provider portability or shared tool interfaces across Python services |
+| `LangGraph` | Graph runtime for orchestrator-worker flows, stateful multi-step agents | Strong candidate for the next-generation multi-issue synthesis runtime |
+| `Deep Agents` | Higher-level planning, subagents, context management, streaming on top of LangGraph | A good fit for research-heavy or decomposition-heavy tasks, especially if regional synthesis becomes more complex |
+| `Langfuse` | Observability, tracing, evaluation, prompt/version analytics | Best paired alongside the runtime, not instead of it; especially useful once production traffic, latency, and cost monitoring matter |
+
+Current recommendation:
+
+- keep the canonical app state, streaming state, answer packets, and eval artifacts in Convex
+- introduce LangGraph or Deep Agents only when regional multi-issue orchestration clearly exceeds what the Convex-native harness should own
+- add Langfuse when you want richer cross-environment tracing, prompt analytics, production eval sampling, and cost dashboards
+
+### 5. Durable streaming vs plain SSE
+
+```text
+SSE ONLY
+--------
+request -> token stream -> browser
+           no replay
+           no durable audit trail
+
+DURABLE STREAMING
+-----------------
+request -> draft message
+        -> messageEvents
+        -> live subscriptions
+        -> replay / audit / eval
 ```
 
-### Latest Results (3-case sample)
+| Pattern | Strengths | Weaknesses | Fit here |
+| --- | --- | --- | --- |
+| Plain SSE | Fast to build, good for token streaming demos | Fragile reconnect story, ephemeral state, harder auditability, weaker replay | Fine for a simple chat demo |
+| Durable Convex `messageEvents` | Survives reloads, supports replay, trace rendering, quality metadata, and auditability | More backend work | Best fit for an operator product where progress visibility and post-run inspection matter |
+| Hybrid SSE + durable checkpoints | Best perceived latency plus durable milestones | Highest complexity | Worth considering later if token-by-token transport latency becomes a UX bottleneck |
 
-| Metric | Score |
-|--------|-------|
-| Reference Score | 100% |
-| Accuracy | 4.7/5 |
-| Actionability | 5.0/5 |
-| Completeness | 4.7/5 |
-| Groundedness | 4.7/5 |
-| Policy Compliance | 4.7/5 |
+### 6. File storage: Convex today, R2 vs S3 in production
 
-### Running Evals
+| Option | Strengths | Weaknesses | Recommendation here |
+| --- | --- | --- | --- |
+| Convex file storage | Fastest prototype path, tightest integration with app data and queries | Not the cheapest long-term object storage for heavy evidence traffic | Right default for this prototype |
+| Cloudflare R2 | S3-compatible API, no egress charge, attractive for evidence-heavy workloads | Smaller ecosystem than S3, still another storage plane to manage | Best production target if attachment read traffic becomes meaningful |
+| Amazon S3 | Deepest ecosystem, mature IAM and lifecycle tooling, broad enterprise familiarity | Public internet data transfer out is billed and region-dependent; more config overhead | Best when an org is already all-in on AWS governance and tooling |
 
-```bash
-# Run 3-case smoke test
-npx convex run eval:runEval '{"limit":3}'
+### 7. Final stack stance
 
-# Run full 20-case suite
-npx convex run eval:runEval
+```text
+CURRENT BEST FIT
+----------------
+Convex as canonical app backend
+  + Convex-native streaming + eval artifacts
+  + Gemini tool calling
+  + deterministic fast path
+  + cheaper planner path for routine work
+  + pro-class synthesis only for hard cases
+
+NEXT EVOLUTION
+--------------
+Convex stays system of record
+  + LangGraph / Deep Agents for hard multi-issue orchestration
+  + Langfuse for production observability and eval monitoring
+  + R2 for heavier attachment traffic
 ```
 
----
+### 8. Production retrieval evolution: Convex first, GraphRAG second
 
-## Key Design Decisions & Tradeoffs
+One of the most useful interview takeaways was that "regional retail problems" are not uniform. A coastal store, a college-town store, and a suburban family-heavy store can all fail for different reasons even when the top-line issue label looks similar.
 
-### Why Convex (not Postgres/Supabase)?
+Examples:
 
-**Decision:** Real-time subscriptions. When a store manager files an issue, the regional manager's dashboard updates instantly — no polling, no WebSocket setup, no cache invalidation.
+- population mix can change staffing pressure, basket composition, and shrink patterns
+- weather can change perishables risk, HVAC urgency, foot traffic, and safety incidents
+- supply patterns can tie the same vendor or SKU failure across multiple stores even when the store managers describe the issue differently
 
-**Tradeoff:** Convex is less flexible for complex SQL queries. We compensate with in-memory filtering in query handlers, which works at prototype scale (< 100 records) but wouldn't scale to 10K+ without indexes and pagination.
+That is exactly where a graph starts becoming attractive.
 
-**Reference:** [Convex real-time docs](https://docs.convex.dev/realtime)
+```text
+PROTOTYPE SHAPE
+---------------
+Convex
+  -> operational state
+  -> files
+  -> streaming events
+  -> eval artifacts
 
-### Why Gemini 3.1 Pro (not GPT-4o or Claude)?
+PRODUCTION EVOLUTION
+--------------------
+Convex (system of record)
+  -> curated closed tickets + policies + vendor + SKU facts
+  -> projection pipeline
+  -> Neo4j GraphRAG knowledge graph
+  -> multi-hop retrieval for regional synthesis
+```
 
-**Decision:** Native Google Search grounding. In a single agent turn, Gemini can call both internal tools (searchIssues, lookupPolicy) AND search the web for supplier news, regulatory updates — no separate search API needed.
+Why a graph can help for broader multi-issue synthesis:
 
-**Tradeoff:** Gemini 3 Pro was deprecated March 9, 2026. We use 3.1 Pro Preview which is newer but still "Preview." Model quality for multi-issue synthesis is weaker than single-issue queries.
+- it preserves relationships directly instead of forcing everything into flat text chunks
+- it makes cross-store questions more natural:
+  - `Store -> Region`
+  - `Issue -> Policy`
+  - `Issue -> SKU`
+  - `Issue -> Vendor`
+  - `Issue -> WeatherEvent`
+  - `Issue -> PopulationSegment`
+  - `Resolution -> Outcome`
+- it supports retrieving context around the match, not just the matched chunk itself
 
-**Reference:** [Gemini models page](https://ai.google.dev/gemini-api/docs/models)
+The current Neo4j GraphRAG Python package is a serious production candidate for this layer:
 
-### Why Deterministic Answers (not always LLM)?
+- it is Neo4j's official first-party GraphRAG package
+- it supports vector indexes and standard RAG retrievers
+- it supports richer retrieval modes such as `VectorCypherRetriever`, `HybridRetriever`, and `Text2Cypher`
+- it also supports external vector stores such as Pinecone and Qdrant while still using Neo4j as the relationship layer
 
-**Decision:** For single tracked issues with a clear governing policy, we skip the LLM entirely and render a template-based answer. This guarantees the correct policy is cited, action steps match the policy document, and no hallucinated details are added.
+That means the future path does not have to be "replace Convex with Neo4j." The better path is:
 
-**Tradeoff:** Template answers feel less natural. But for safety-critical operations (cooler failure at 52°F, customer slip-and-fall), accuracy > naturalness.
+```text
+Convex = operational truth
+Neo4j  = historical relationship projection for richer retrieval
+Langfuse = tracing / eval / drift monitoring
+```
 
-### Why Durable Streaming (not SSE)?
+Recommended production shape:
 
-**Decision:** Stream via Convex mutations (messageEvents table) instead of Server-Sent Events. If the client disconnects and reconnects, they get the full conversation state from the database — no lost messages.
+| Layer | Recommendation | Why |
+| --- | --- | --- |
+| Canonical app backend | `Convex` | Keep the operational app state, files, sessions, actions, and eval artifacts in one place |
+| Historical retrieval projection | `Neo4j` | Best fit once closed tickets, vendors, SKUs, stores, policies, and environmental factors need relationship-aware retrieval |
+| Vector path | Start with Neo4j native vector indexes; keep Pinecone/Qdrant as optional external retrievers if scale or infra standards require them | Lets the graph own relationships while leaving room for a dedicated vector service later |
+| Monitoring | `Langfuse` plus product metrics | Track trace quality, latency, eval drift, and new-topic emergence |
 
-**Tradeoff:** Higher mutation volume (each text chunk is a mutation). At scale, this needs batching or coarser chunk sizes.
+Important caution: the Neo4j Knowledge Graph Builder exists today, but its KG-construction features are still marked experimental. For production, that means favoring a reviewed ETL / upsert pipeline over fully automatic graph construction until the schema and entity extraction contract are stable.
 
-**Reference:** [Convex streaming guidance](https://docs.convex.dev/agents/streaming)
+## Agent Chat Design
 
-### Why Cloudflare R2 for Production File Storage (not S3)?
+The assistant is not treated as a single blocking `ask()` call. It is a product surface with durable execution state.
 
-**Decision:** $0 egress fees. Retail generates high read traffic (managers downloading photos, compliance docs across 10+ stores). S3 egress at $0.09/GB is a silent cost multiplier.
+### What the rail does
 
-**Tradeoff:** R2 is newer with fewer features (no S3 Select, limited lifecycle policies). For a file-upload use case, this doesn't matter.
+- opens as an expandable operator sidebar instead of taking over the whole workspace
+- supports store-scoped, regional-scoped, and shared-session chat
+- renders streamed answer text instead of waiting for a final blob
+- shows trace data in a readable operator format
+- displays clickable sources for grounded runs
+- exposes quality checks and answer packet metadata for reviewability
 
-**Reference:** [R2 vs S3 comparison](https://www.cloudflare.com/pg-r2-comparison/)
+### Root-cause design decisions
 
----
+#### 1. Durable streaming over blocking waits
 
-## Real User Scenarios
+The original weak pattern is:
 
-### Store Manager: Maria Chen (STR-101 Greenfield Plaza)
+```text
+user submits prompt
+  -> action runs
+  -> UI waits
+  -> final answer arrives all at once
+```
 
-| Scenario | What She Does | What the System Does |
-|----------|--------------|---------------------|
-| Opens app at 6 AM | Sees daily greeting with staffing (9 scheduled, 8 showed, 1 no-show) + 3 low stock items | ChatPanel queries `staffing.getLatestByStore` + `inventory.getLowStock` |
-| Notices milk shelf empty | Clicks ISS-001 -> Thread opens | Chat scopes to ISS-001, suggests "What's the current status?" |
-| Asks "What should I do?" | Agent returns: policy POL-INV-003 steps, DairyFresh vendor contact, $480 revenue impact, cross-store flag (Elm St affected too) | Agent calls searchIssues + lookupPolicy + lookupInventory |
-| Takes photo of empty shelf | Uploads via "Attach evidence" | File stored in Convex, linked to session |
-| Marks action item complete | "Follow up with DairyFresh" -> Mark complete -> "All actions for ISS-001 complete. Resolve?" | ActionItemsPanel checks remaining items for same issueId |
+That hides progress, makes tool execution opaque, and gives no durable intermediate state.
 
-### Regional Manager: Sandra Williams (REG-NE, 8 stores)
+The shipped pattern is:
 
-| Scenario | What She Does | What the System Does |
-|----------|--------------|---------------------|
-| Opens regional dashboard | Sees pattern alerts: "3 stores reporting inventory_gap", 19 open / 3 critical / 8 escalated / $70.8K risk | PatternAlertBanner groups issues by type + SKU |
-| Clicks "Queue (8)" tab | Sees 8 escalated issues with Accept/Delegate buttons | Filtered to `escalatedToRegional === true` |
-| Accepts ISS-004 (cooler failure) | Clicks Accept -> issue moves to "in_progress" | `updateIssueStatus` mutation + audit event |
-| Delegates ISS-003 (staffing) | Clicks Delegate -> types "Contact StaffNow agency" -> Confirm | Updates issue with delegation notes |
-| Opens group chat | `/chat` -> "# general" -> Asks "Which stores need help today?" | All operators see the same conversation in real-time |
+```text
+user submits prompt
+  -> assistant draft message created
+  -> messageEvents appended during planning / execution / synthesis
+  -> UI subscribes live to message + deltas
+  -> final answer packet persisted
+```
 
----
+That is why the rail can now show:
 
-## Interview Walkthrough Guide
+- run started
+- plan created
+- tool step progress
+- streamed answer text
+- final quality checks
 
-### Opening (2 min)
-"This is FloorAI — an AI-powered operations control layer for retail. It's built for store managers and regional managers who need instant, policy-grounded guidance when issues arise."
+#### 2. Trace as product, not debug residue
 
-### Demo Flow (10 min)
+The agent trace is stored and rendered intentionally. It includes:
 
-1. **Home page** — Show operator session picker. "Access is role-scoped. Maria Chen sees only her store. Sandra Williams sees all 8."
+- planner summary
+- planned steps
+- executed steps
+- tool names
+- arguments
+- durations
+- success state
+- model-turn telemetry
+- grounded sources
 
-2. **Store view as Maria Chen** — Show issue list with SLA timers ("47h overdue"). Click ISS-001 to open a thread. Show the issue-specific chat suggestions.
+This matters for operator trust and interview storytelling. The assistant is inspectable.
 
-3. **Ask the agent** — "What's happening with our milk delivery?" Wait for streaming response. Point out: issue ID, policy reference, action steps, cross-store pattern flag, revenue impact.
+#### 3. Sources must be readable
 
-4. **Switch to Sandra Williams** — Regional dashboard. Show pattern alert banners. Show Queue tab with Accept/Delegate. Show hot stores cards.
+Google grounding returns redirect-style URLs. The UI cleans those into readable source cards and routes them through a source endpoint so the user gets a usable click target instead of a raw grounding redirect.
 
-5. **Group chat** — Open `/chat`. Show the shared channel. "Any operator can join. The AI assistant is in the room."
+### Current chat surfaces
 
-### Technical Discussion Points (5 min)
+- [src/components/ChatPanel.tsx](src/components/ChatPanel.tsx)
+- [src/components/GroupChat.tsx](src/components/GroupChat.tsx)
+- [convex/messages.ts](convex/messages.ts)
+- [convex/answerPackets.ts](convex/answerPackets.ts)
+- [src/app/api/source/route.ts](src/app/api/source/route.ts)
 
-- **"Why not just a chatbot?"** — "Chat is one surface. The real value is the issue-threaded conversation with persistent sessions, quality-gated responses, and the eval harness that measures whether the agent actually helps."
+## Evaluation Design
 
-- **"How do you know the agent is accurate?"** — Show the eval framework. "20 golden test cases with required references. Automated scoring plus LLM judge. 4.7/5 accuracy on the sample run."
+This repo treats evaluation as part of the product, not a side notebook.
 
-- **"What would you change for production?"** — "Three things: (1) Replace localStorage auth with real auth (Clerk/Auth0). (2) Add push notifications for critical SLA breaches. (3) Run the 20-case eval as a CI gate on every agent prompt change."
+### Canonical datasets
 
----
+- [data/golden_dataset.json](data/golden_dataset.json)
+- [data/synthetic_preferred_responses.json](data/synthetic_preferred_responses.json)
+
+These are synthetic reference cases for prototype evaluation only.
+
+### Live evaluation path
+
+- [convex/eval.ts](convex/eval.ts)
+
+The important part is that evaluation runs the live `agent:chat` path, not a separate mocked harness. That means the same retrieval, tool calling, synthesis, fallback, and quality logic used by the product is what gets judged.
+
+### What gets scored
+
+- factual alignment
+- actionability
+- completeness
+- groundedness
+- policy compliance
+- required reference coverage
+
+### Persisted quality artifacts
+
+- `answerPackets`
+- `evalRuns`
+- `evalCases`
+- message-level quality metadata
+
+That gives the project durable answers to:
+
+- What did the assistant say?
+- What evidence and tools were used?
+- Did it pass runtime quality checks?
+- Did it pass the golden eval set?
+
+### Production-grade golden dataset strategy
+
+The prototype uses synthetic goldens, but the right production evolution is more strict:
+
+```text
+PREVIOUSLY CLOSED TICKETS
+  -> cleanup + dedupe + policy revalidation
+  -> high-quality goldens for judging
+
+SEPARATELY
+  -> retrieval projection / GraphRAG corpus
+  -> historical context for the agent
+```
+
+This separation matters. The same historical ticket should not silently define both:
+
+- what the model retrieves
+- and what "success" means in evaluation
+
+Recommended production workflow:
+
+1. Start from previously closed issues with verified outcomes.
+2. Remove stale policy guidance, contradictory resolutions, and low-quality operator writeups.
+3. Promote only the highest-quality subset into a judged golden dataset.
+4. Keep the broader cleaned historical set as retrieval material, not as the scoring truth.
+5. Version the goldens and run eval gates before deployment.
+
+### Monitoring new topics and graph maintenance
+
+Once historical issue data becomes large enough, the maintainability question changes from "Can we retrieve?" to "Can we keep the retrieval layer current without rebuilding it all the time?"
+
+Recommended pattern:
+
+```text
+new incidents + closures + policy changes
+  -> monitoring / drift detection
+  -> reviewed delta extraction
+  -> incremental graph upserts
+  -> refreshed GraphRAG retrieval
+```
+
+Concrete production recommendation:
+
+- use trace and eval monitoring to detect new issue themes, policy drift, or repeated low-confidence answers
+- create a review queue for genuinely new topics before adding them into the graph
+- append reviewed deltas into Neo4j incrementally instead of doing full graph rebuilds
+- keep goldens on a separate versioned path from retrieval updates
+
+Neo4j CDC is a strong fit for the incremental-update side of that design because `db.cdc.query` can return changes after a known change identifier, which is exactly the shape you want for delta-based graph maintenance.
+
+## Real User Scenarios Covered
+
+### Store manager scenarios
+
+- "We have a staffing no-show on Saturday. What can I approve right now?"
+- "The cooler is failing. What policy applies and what is the next escalation?"
+- "Milk is out again. Is this a tracked issue or a new one?"
+- "I uploaded a photo and a PDF. Can you use them in the answer?"
+- "Create a follow-up action item for this vendor issue."
+
+### Regional manager scenarios
+
+- "Which stores need intervention first?"
+- "What patterns are emerging across the region?"
+- "What should I do about the escalated HVAC cases?"
+- "Give me a daily watch summary before I start triage."
+- "Show me the stores with the highest revenue exposure."
+
+### Shared/group scenarios
+
+- multiple operators discussing the same issue thread
+- regional and store leads reviewing the same context
+- collaborative chat without losing sender attribution
+
+## Interview Walkthrough Topics
+
+If you are using this repo in an interview, these are the topics it is designed to support.
+
+### Product framing
+
+- why retail operations is a good AI workflow candidate
+- why store and regional personas need different views
+- why the product is more than "chat over data"
+
+### Architecture framing
+
+- why Convex was used as the operational backend
+- why Gemini was chosen for tool calling plus web grounding
+- why the chat rail is event-driven and traceable
+
+### Quality framing
+
+- why golden responses exist
+- why live evaluation must run the same runtime as the product
+- why answer packets and quality checks are persisted
+
+### Tradeoff framing
+
+- when to prefer deterministic answers
+- when to allow broader synthesis
+- what is prototype-grade vs what would need hardening in production
+
+For the long-form walkthrough and ASCII appendix, see [INTERVIEW_WALKTHROUGH.md](INTERVIEW_WALKTHROUGH.md).
+
+## Exact Claude Code Kickoff Prompt
+
+The first prompt in the Claude Code JSONL transcript included an image attachment plus the following text. This block was extracted directly from the session transcript, with line wrapping normalized for README readability.
+
+```text
+DIRECTION: We are going with the Scenarios for Retail: Store Operations Assistant, spin up a prototype at the end, plan for now.
+
+3:12PM, 1 hour 15 minutes, let's keep it short succinct and keep explanations suitable for technical as well as non-technical discussions. We will be going over these choices and tradeoffs as if we are going over them during the interview, make sure any responses are backed up by ideally at least one real URL link, so this way I can personally read and cross reference the material.
+
+We will be making a slide show with a singular slide, up to three slides max (utilize https://github.com/zarazhangrui/frontend-slides) at the very end, going over the situation, task, answer, and result (essentially, let' say we picked Scenarios for Retail: Store Operations Assistant ; the slide show should help us acknowledge the issues faced by a typical store manager and a regional retail manager. Maybe we can think about Walmart/Trader Joes for this case assumption. We want to talk about the UIs we designed, one for the store manager (access to only their store) and another for the regional manager (access to all assigned stores). Something to prepare you ahead of time, we are likely going to use Convex for our database solution, the real time update can be quite useful for immediate responsive resolutions. We are likely going to use google gemini for the LLM Agent with tool calls to help us retrieve from the relational database on inventory side of things, vector database on historical resolutions, and NoSQL for any files (Google gemini actually has the ability for us to upload file directly to our google account, but in case if we were to need the files as individual contexts or to display the files, we should keep it stored on convex, maybe the S3 Bucket or cloudflare R2, give me your recommendations as well but make sure to explain why).
+
+Below is the background context for What we will be working on today, I will give you the instructions and walk through for how we are going to approach this, while at the same time I would like you to help me generate synthetic dataset (ie CSV file of 20 test cases to help us see the lens of the problems and difficulties and issues and reports from Region Retail Managers and their associated individual store managers)
+
+AI Prototype Challenge
+You are an AI consultant helping a client solve a real business problem using AI. Your goal is to quickly
+turn an unclear problem into a working solution.
+Your Task:
+- Build a simple AI prototype that shows how the solution would work
+- Create one slide to explain and pitch your idea
+- Walk through your prototype and explain your decisions in a live interview
+Scenarios
+Retail: Store Operations Assistant
+A regional retail manager needs fast answers when issues arise across multiple store locations. The
+solution takes a question or issue such as inventory gaps, staffing challenges, or operational blockers,
+pulls relevant internal policies or historical data, and provides clear, actionable guidance.
+Real Estate: Property Insight Generator
+A commercial real estate broker wants a quick overview of a property before meeting a client. The
+solution takes a property address or portfolio name, summarizes key property details, and highlights
+risks or talking points relevant for client discussions.
+Education: Course Planning Support Tool
+A university department is designing or revising a course curriculum. The solution takes a course topic
+or program name, suggests core modules and learning objectives, highlights emerging skills, and
+identifies potential curriculum gaps.
+Open Choice
+Create your own AI use case in retail, real estate, education, or another industry of your choice.
+Environment & Data
+You have flexibility in how you build your solution. Choose the approach that best demonstrates your
+capabilities. Data is not provided - you are responsible for sourcing or creating your own.
+Deliverables
+1. Working Prototype - Demonstrable via live demo; focus on core functionality over polish.
+2. One Slide - Single slide to support your pitch to stakeholders.
+3. Live Interview - Present your slide, demo your prototype, and answer questions.
+```
+
+## How The Prompt Evolved
+
+The session transcript shows that the prompt started broad, then became more product-specific through feedback.
+
+### Transcript-backed evolution
+
+1. Kickoff prompt
+   - architecture, tradeoffs, synthetic data, two personas, interview framing
+2. UI simplification prompt
+   - `i want new inspiration for even more modern compact minimal user mental model and experience, it shuold feel easy and familiar to use`
+3. Workflow plus information-architecture prompt
+   - `our LLM agent should also be used to provide daily watch or summaries`
+   - `also how come i do not see the full redesign and rewrite to Linear sidebar + Slack-style threading`
+4. Visual QA loop
+   - screenshot-only critiques in the transcript
+5. Layout correction prompt
+   - `did you live verify, I thought the chat would be ni the center`
+
+### What changed in intent over time
+
+```text
+START
+  prototype + architecture + tradeoffs + synthetic data
+
+THEN
+  modern compact UX
+  familiar mental model
+  stronger information architecture
+
+THEN
+  daily watch / summaries
+  Linear + Slack interaction model
+  tighter live verification
+
+SHIPPED RESULT
+  guided store / regional workspaces
+  operator rail chat
+  streaming events
+  traces and sources
+  evaluation and quality persistence
+```
+
+### The hidden lesson
+
+The initial prompt was strong on architecture, stack, and interview framing, but weak on:
+
+- the exact UI mental model
+- the desired chat interaction pattern
+- how evaluation should be part of the product from day one
+- the need for traceability, streaming, and quality artifacts
+
+Those requirements arrived later through iteration instead of being front-loaded.
+
+## Recommended Starting Prompt For Claude Code
+
+If this project were starting from zero again, this is the prompt that should have been used up front.
+
+```text
+We are building a retail operations AI assistant for an interview demo and GitHub portfolio piece.
+
+GOAL
+- Deliver a working, shareable prototype plus a clean developer/interview README.
+- Optimize for a truthful live walkthrough, not a fake polished mockup.
+
+SCENARIO
+- Use the Retail: Store Operations Assistant scenario.
+- Two personas:
+  1. Store manager: single-store issue intake, evidence upload, grounded support.
+  2. Regional manager: multi-store triage, pattern detection, escalations, daily watch.
+
+NON-NEGOTIABLE STACK
+- Next.js App Router
+- Convex for database, realtime subscriptions, storage, actions, and persisted evaluation artifacts
+- Gemini 3.1 Pro Preview for tool calling and Google Search grounding
+- Internal Convex tool surface for issues, policies, inventory, staffing, resolutions, files, and action items
+
+PRODUCT REQUIREMENTS
+- Build real store and regional workspaces, not just a chat demo.
+- Keep the UI compact, familiar, and easy to parse.
+- Use a Linear + Slack mental model:
+  - clear left-side navigation / workspace structure
+  - operational content in the main canvas
+  - assistant in an expandable right rail
+- Add a separate group-chat surface for shared collaboration.
+- Make the chat issue-aware and role-aware.
+- Include daily watch / summary support for regional usage.
+
+AGENT REQUIREMENTS
+- Internal data should be primary; use Google Search only when fresh external facts materially help.
+- The assistant must cite exact issue IDs, policy IDs, SKUs, dates, thresholds, and action steps when available.
+- Use deterministic evidence-bound behavior for straightforward single-issue cases where possible.
+- Use model synthesis for broader multi-issue and regional prioritization questions.
+- Persist plan, execution trace, sources, telemetry, quality checks, and answer packets.
+
+STREAMING REQUIREMENTS
+- Do not build chat as one blocking action that returns a final string.
+- Implement durable event streaming with draft messages plus messageEvents.
+- Stream text deltas, step progress, trace updates, and source cards into the UI.
+
+EVALUATION REQUIREMENTS
+- Create a synthetic dataset and a golden dataset.
+- Evaluate the live agent runtime, not a mocked or separate harness.
+- Persist eval runs and per-case results in Convex.
+- Judge for:
+  - factual alignment
+  - policy grounding
+  - actionability
+  - completeness
+  - groundedness
+  - required reference coverage
+
+REAL-WORLD WORKFLOW REQUIREMENTS
+- Evidence upload for documents, photos, and videos
+- Action item creation and completion
+- Role and scope enforcement
+- Audit logging
+- Clear distinction between prototype auth/session simulation and real production auth
+
+DOCUMENTATION REQUIREMENTS
+- Update README as a new developer guide and interview guide.
+- Include:
+  - exact initial prompt
+  - prompt evolution
+  - architecture overview
+  - agent chat design
+  - evaluation design
+  - real user scenarios
+  - tradeoffs and production considerations
+- Maintain a separate interview walkthrough markdown with ASCII diagrams.
+
+WORKSTYLE
+- Start with a spec and plan.
+- Build vertically slice by slice.
+- Verify in browser, not just in code.
+- Fix root causes rather than layering patches.
+- Cite current official docs when framework behavior matters.
+```
 
 ## New Developer Guide
 
-### Getting Started
+### Prerequisites
+
+- Node.js 22+
+- Python 3.11+
+- a Convex deployment
+- a Google Gemini API key
+
+### Setup
+
+1. Install dependencies.
+
+   ```bash
+   npm install
+   ```
+
+2. Set the Gemini key in Convex.
+
+   ```bash
+   npx convex env set GOOGLE_API_KEY your_key_here
+   ```
+
+3. Start local development.
+
+   ```bash
+   npm run dev
+   ```
+
+4. Seed the synthetic data.
+
+   ```bash
+   npm run seed
+   ```
+
+### Important scripts
 
 ```bash
-git clone https://github.com/HomenShum/floorai.git
-cd floorai
-npm install
-npx convex dev                    # starts Convex backend (needs auth)
-npm run dev                       # starts Next.js on localhost:3000
-npx convex run seed:seedAll       # seeds 20 issues, 8 stores, 18 policies
+npm run dev              # Convex + Next.js
+npm run build            # Next.js production build
+npm run seed             # Seed synthetic operational data
+npm run eval:validate    # Validate the Python golden harness inputs
+npm run eval:goldens     # Python golden eval
+npm run eval:live        # Convex live eval against the agent runtime
+npm run eval:live:local  # Local scripted live eval
+npm run video:studio     # Open Remotion studio
+npm run video:render     # Render video/out/FloorAIDemo.mp4
 ```
 
-### Project Structure
+### Main files to know first
 
-```
-convex/
-├── agent.ts          # 2000-line agent: plan -> execute -> synthesize -> quality
-├── briefs.ts         # Evidence retrieval with weighted ranking
-├── eval.ts           # Golden dataset evaluation harness
-├── access.ts         # Role-based access control (4 functions)
-├── schema.ts         # 16 tables with indexes
-├── seed.ts           # Synthetic data seeder
-├── messages.ts       # Message CRUD + streaming mutations
-├── answerPackets.ts  # Quality-checked answer persistence
-├── issues.ts         # Issue CRUD + search
-├── policies.ts       # Policy search (full-text)
-├── inventory.ts      # Store inventory queries
-├── operations.ts     # Store/regional metrics
-├── actionItems.ts    # Action item tracking
-├── staffing.ts       # Staffing data
-├── stores.ts         # Store lookups
-└── users.ts          # Operator profiles
+- [src/app/page.tsx](src/app/page.tsx)
+- [src/app/store/page.tsx](src/app/store/page.tsx)
+- [src/app/regional/page.tsx](src/app/regional/page.tsx)
+- [src/app/chat/page.tsx](src/app/chat/page.tsx)
+- [src/components/ChatPanel.tsx](src/components/ChatPanel.tsx)
+- [src/components/GroupChat.tsx](src/components/GroupChat.tsx)
+- [convex/schema.ts](convex/schema.ts)
+- [convex/briefs.ts](convex/briefs.ts)
+- [convex/agent.ts](convex/agent.ts)
+- [convex/eval.ts](convex/eval.ts)
 
-src/
-├── app/
-│   ├── page.tsx          # Home (operator picker)
-│   ├── store/page.tsx    # Store manager workspace
-│   ├── regional/page.tsx # Regional manager workspace
-│   ├── chat/page.tsx     # Group chat
-│   └── layout.tsx        # Root layout with Sidebar
-├── components/
-│   ├── ChatPanel.tsx     # AI assistant sidebar (1000+ lines)
-│   ├── GroupChat.tsx      # Standalone group chat
-│   ├── IssueCard.tsx      # Issue display with SLA timers
-│   ├── Sidebar.tsx        # Linear-style navigation
-│   ├── ActionItemsPanel.tsx
-│   ├── IssueComposer.tsx
-│   └── ...
-└── lib/
-    └── fileUploads.ts    # File upload orchestration
+### What to preserve when extending the system
+
+- Keep internal evidence primary for operational guidance.
+- Do not let the model invent policy steps or issue references.
+- Preserve streamed execution visibility in the operator rail.
+- Treat evaluation as part of the runtime, not an afterthought.
+- Keep README and walkthrough docs updated when the agent or evaluation contract changes.
+
+## Repo Map
+
+```text
+src/app/                 app routes
+src/components/          product UI surfaces
+src/lib/                 shared frontend helpers
+convex/                  schema, queries, mutations, actions, agent runtime
+data/                    synthetic data + goldens
+agents/                  Python evaluation harness
+scripts/                 local verification / eval scripts
+PLAN.md                  original architecture plan
+INTERVIEW_WALKTHROUGH.md interview-ready deep walkthrough + ASCII appendix
+README.md                GitHub overview + developer guide + prompt history
 ```
 
-### Key Files to Understand
+## Slide And Video Notes
 
-1. **`convex/agent.ts`** — The brain. Start at the `chat` action (line ~1320). Follow: args validation -> brief retrieval -> planner -> execution loop -> synthesis -> quality report -> answer packet.
+### Slide deck
 
-2. **`convex/briefs.ts`** — How evidence is scoped. `getAgentBrief()` ranks issues/policies/inventory by relevance to the query using weighted token matching.
+The old slide deck was replaced with a new three-slide deck in [slides/presentation.html](slides/presentation.html), using the linked `frontend-slides` repo as the reset point for tone and pacing.
 
-3. **`convex/eval.ts`** — `runEval` action. Runs the actual agent, scores responses against golden dataset, persists results.
+It now matches the current product story:
 
-4. **`src/components/ChatPanel.tsx`** — The operator rail. Handles: session management, issue threading, streaming display, metadata rendering, file upload.
+- operator personas and workflows
+- agent plus evaluation architecture
+- key tradeoffs and stack decisions
 
-5. **`convex/access.ts`** — 4 functions: `requireOperator`, `requireStoreAccess`, `requireRegionAccess`, `requireIssueAccess`. Every query checks these.
+### Remotion demo
 
-### Environment Variables
+The Remotion project lives under [video](video).
 
-```bash
-# Convex
-CONVEX_DEPLOYMENT=dev:spotted-panda-291
-NEXT_PUBLIC_CONVEX_URL=https://spotted-panda-291.convex.cloud
+Key files:
 
-# Gemini (set in Convex env, not .env.local)
-npx convex env set GOOGLE_API_KEY <your-key>
+- [video/src/Root.tsx](video/src/Root.tsx)
+- [video/src/FloorAIDemo.tsx](video/src/FloorAIDemo.tsx)
+- [video/src/scenes](video/src/scenes)
+
+The rendered output is:
+
+- [video/out/FloorAIDemo.mp4](video/out/FloorAIDemo.mp4)
+
+This follows the Remotion Claude Code workflow documented here:
+
+- https://www.remotion.dev/docs/ai/claude-code
+
+## Production Notes
+
+This is a production-style prototype, not a finished enterprise rollout.
+
+The main next steps for a real deployment would be:
+
+- replace demo operator sessions with real authentication and identity mapping
+- harden canonical source resolution for grounded web citations
+- expand typed worker and orchestrator flows for broader multi-issue synthesis
+- use curated real historical resolutions only after cleanup and policy review
+- project cleaned historical tickets into a secondary GraphRAG layer only after the relational model and entity schema are stable
+- monitor new issue themes and append reviewed deltas into the graph instead of rebuilding it blindly
+- add deployment gates based on eval regression thresholds
+
+## Production Roadmap — GraphRAG, Continuous Evaluation, and Monitoring
+
+This section documents the production architecture discussed during the technical interview. It covers where the system would go after the prototype stage, with concrete technical approaches for knowledge management, evaluation, and observability.
+
+### Regional variability and context-aware retrieval
+
+Different stores face fundamentally different issue profiles. A store in the Southwest dealing with HVAC failures during summer heat has a completely different operational context from a Northeast store managing winter staffing shortages. Population density, seasonal weather, and supply chain geography all shape which issues surface and how they should be resolved.
+
+This is why the current prototype scopes evidence retrieval by store context and why the regional manager view synthesizes cross-store patterns rather than treating each store identically. In production, this variability argues against a single flat retrieval model and toward a structured knowledge graph where geographic, seasonal, and supply-chain relationships are explicit edges, not implicit in embedding space.
+
+### 1. GraphRAG with Neo4j for production knowledge management
+
+Microsoft's GraphRAG pipeline works in three phases:
+
+```text
+PHASE 1 — EXTRACTION
+---------------------
+source documents (closed tickets, policies, vendor records)
+  -> LLM entity/relationship extraction
+  -> (entity, relationship, entity) triples
+
+PHASE 2 — COMMUNITY DETECTION
+------------------------------
+entity graph
+  -> Hierarchical Leiden algorithm (graspologic / NetworkX)
+  -> semantically clustered communities
+  -> LLM-generated community summaries
+
+PHASE 3 — QUERY
+----------------
+user query
+  -> local search: entity-centric subgraph traversal within N hops
+  -> global search: map-reduce over community summaries
+  -> hybrid: both local and global for complex operational queries
 ```
 
----
+Why graph retrieval outperforms flat vector search for operational AI:
 
-## Future Work
+| Capability | Vector search | Graph traversal | Impact for this app |
+| --- | --- | --- | --- |
+| Semantic similarity | Strong | Moderate | Good for finding similar past issues |
+| Multi-hop reasoning | Weak (chunks are independent) | Strong (typed edge traversal) | Critical for "how does this vendor issue relate to that staffing gap" |
+| Co-reference resolution | Weak | Strong | Needed when the same root cause spans multiple tickets |
+| Causal chain recovery | Not supported | Native via path queries | Required for escalation path reconstruction |
+| Hybrid retrieval | Vector only | Graph structure + vector similarity in one Cypher query (Neo4j 5.11+) | Best of both worlds |
 
-- **@ mentions** — Tag operators in group chat with autocomplete
-- **Threaded replies** — Slack-style threads within the group chat
-- **User presence** — Online/offline indicators in the sidebar
-- **Push notifications** — Critical SLA breaches via service worker
-- **Mobile-native layout** — Phone-optimized issue filing with camera-first workflow
-- **Comparative analytics** — Bar charts, trend lines, week-over-week store comparison
-- **Multi-agent decomposition** — Typed worker agents for issue ranking, policy grounding, cross-store detection, financial rollup (documented in INTERVIEW_WALKTHROUGH.md)
-- **CI eval gate** — Run 20-case eval on every agent prompt change, block deploy on regression
+Production stack recommendation:
 
----
+- Neo4j AuraDB (managed) or self-hosted with APOC plugin
+- Microsoft GraphRAG library with Dynamic Community Selection (reduces token usage ~79% over v1)
+- LlamaIndex `KnowledgeGraphIndex` or LangChain `Neo4jGraph` for integration
+- Community detection via Hierarchical Leiden partitioning
+
+### 2. Delta-diff append pattern for incremental graph maintenance
+
+The core pattern avoids full reindexing when new tickets or policies arrive:
+
+```text
+NEW DATA ARRIVES
+  |
+  v
+ENTITY EXTRACTION (LLM on new docs only)
+  |
+  v
+DIFF AGAINST EXISTING GRAPH
+  |
+  +-- Neo4j MERGE: atomically match-or-create
+  |     MERGE (n:Entity {id: row.id})
+  |     ON CREATE SET n += row.props
+  |     ON MATCH SET n.mention_count = n.mention_count + 1,
+  |                  n.last_seen_at = timestamp()
+  |
+  +-- Batch via UNWIND for 10-50K entities per transaction
+  |
+  v
+RE-SUMMARIZE AFFECTED COMMUNITIES ONLY
+  |
+  v
+GRAPH UPDATED (no full reindex)
+```
+
+Change detection tooling:
+
+| Tool | How it works | Best use |
+| --- | --- | --- |
+| Neo4j MERGE | Atomically matches-or-creates node/edge patterns, prevents duplicates, supports conditional property updates via ON CREATE / ON MATCH | Primary upsert primitive for all graph updates |
+| Neo4j CDC | Native streaming of node/relationship mutations via Kafka Connect or custom consumer | Trigger downstream re-summarization of affected communities |
+| APOC Triggers | Fire Cypher on every commit, useful for propagating metadata, updating counters, or queuing re-indexing jobs | Real-time dependent updates (e.g., recalculate risk scores when new issues link to a vendor) |
+| Scheduled delta jobs | Cron pipeline querying `WHERE n.created_at > $lastRunTimestamp`, extracts delta subgraph, re-runs Leiden on affected clusters only | Batch maintenance during off-peak hours |
+
+### 3. Golden dataset evaluation from historical closed tickets
+
+Building the golden set:
+
+```text
+HISTORICAL CLOSED TICKETS (cleaned, validated)
+  |
+  v
+STRATIFIED SAMPLE (500-1000 tickets)
+  by category, complexity, resolution path
+  |
+  v
+EXTRACT PER TICKET:
+  (query, ideal_answer, reasoning_chain, source_documents)
+  |
+  v
+HUMAN ANNOTATION + CORRECTION
+  |
+  v
+TAG DIFFICULTY TIERS:
+  - single-hop lookup
+  - multi-hop reasoning
+  - ambiguous / requires-clarification
+  |
+  v
+GOLDEN DATASET
+```
+
+Automated eval harness (extending the current `convex/eval.ts` pattern):
+
+- Run the production agent against every golden query
+- Capture: retrieved context, generated answer, latency, token cost, graph paths traversed
+- LLM-as-judge scoring using a stronger model than production (e.g., Claude Opus judging Sonnet responses)
+- Structured rubrics for: correctness (0-5), completeness, hallucination detection, source attribution
+- Frameworks: DeepEval (`deepeval` package) for `GEval` metric, Braintrust and Arize Phoenix for hosted eval pipelines with drift tracking
+
+Continuous improvement loop:
+
+```text
+PRODUCTION QUERIES
+  |
+  v
+AGENT RESPONSES
+  |
+  +-- 5-10% sampled for automated LLM-as-judge scoring
+  +-- user flags / low-confidence detections
+  |
+  v
+FAILED CASES TRIAGED INTO GOLDEN SET (after human review)
+  |
+  v
+RE-RUN EVALS ON EVERY:
+  - graph update
+  - prompt change
+  - model version change
+  |
+  v
+EVAL SCORE TIME SERIES
+  -> regression = automatic rollback gate in CI/CD
+```
+
+### 4. Monitoring and observability for graph-augmented AI
+
+Graph health metrics:
+
+| Metric | What to track | Alert threshold |
+| --- | --- | --- |
+| Graph staleness | `MAX(n.last_updated)` per entity type; age of oldest community summary | > 7 days for active categories |
+| Entity drift | New entities/week vs. baseline; orphan node count (no edges) | > 2 sigma deviation from rolling mean |
+| Coverage gaps | Queries that return zero graph paths | > 15% of queries in any category |
+| Community coherence | Modularity score post-Leiden; avg community size | Sudden fragmentation or mega-cluster formation |
+
+Query and agent performance:
+
+| Layer | What to track | Tooling |
+| --- | --- | --- |
+| Graph query | db hits, page cache misses, Cypher plan regressions | Neo4j `PROFILE`/`EXPLAIN`, Prometheus exporter |
+| End-to-end retrieval | graph query + vector search + LLM generation latency | OpenTelemetry spans |
+| Token cost | input context size per query (correlates with graph traversal depth) | LangSmith / Arize Phoenix |
+| Answer quality | rolling LLM-as-judge scores on production sample | Same rubrics as golden eval set |
+| Semantic drift | weekly embedding centroid shift vs. golden set distribution | Alert when query distribution diverges from training/eval distribution |
+
+Recommended observability stack:
+
+```text
+GRAFANA DASHBOARDS
+  <- Neo4j metrics endpoint
+  <- custom Prometheus exporters for graph counters
+  <- staleness / coverage gap alerts
+
+LANGSMITH / ARIZE PHOENIX
+  <- trace-level LLM observability
+  <- every agent call: retrieved context, graph paths, generated response
+
+PAGERDUTY
+  <- staleness threshold breach
+  <- coverage gap threshold breach
+  <- eval regression detection
+```
+
+## Source Notes
+
+These docs were used to ground the tradeoff, workflow, and production roadmap sections.
+
+### Core stack
+
+- Convex vector search: https://docs.convex.dev/search/vector-search
+- Convex file storage: https://docs.convex.dev/file-storage
+- Gemini models: https://ai.google.dev/gemini-api/docs/models/gemini
+- Gemini function calling: https://ai.google.dev/gemini-api/docs/function-calling
+
+### Agent frameworks and observability
+
+- LangGraph workflows and agents: https://docs.langchain.com/oss/python/langgraph/workflows-agents
+- Deep Agents overview: https://docs.langchain.com/oss/python/deepagents/index
+- Deep Agents streaming: https://docs.langchain.com/oss/python/deepagents/streaming
+- Deep Agents frontend streaming patterns: https://docs.langchain.com/oss/python/deepagents/frontend/overview
+- Langfuse overview: https://langfuse.com/docs
+- Langfuse observability: https://langfuse.com/docs/observability/overview
+- Langfuse LangChain integration: https://langfuse.com/docs/integrations/langchain
+- AI observability by LangChain: https://www.langchain.com/articles/ai-observability
+
+### GraphRAG and knowledge graph
+
+- Microsoft GraphRAG paper: https://arxiv.org/html/2404.16130v2
+- LlamaIndex GraphRAG implementation: https://docs.llamaindex.ai/en/stable/examples/cookbooks/GraphRAG_v1/
+- Neo4j GraphRAG context provider: https://learn.microsoft.com/en-us/agent-framework/integrations/neo4j-graphrag
+- Neo4j GraphRAG for Python: https://neo4j.com/docs/neo4j-graphrag-python/current/
+- Neo4j GraphRAG RAG retrievers: https://neo4j.com/docs/neo4j-graphrag-python/current/user_guide_rag.html
+- Neo4j Knowledge Graph Builder: https://neo4j.com/docs/neo4j-graphrag-python/current/user_guide_kg_builder.html
+- Neo4j MERGE documentation: https://neo4j.com/docs/cypher-manual/current/clauses/merge/
+- Neo4j APOC triggers: https://neo4j.com/docs/apoc/current/background-operations/triggers/
+- Neo4j Change Data Capture: https://neo4j.com/docs/cdc/current/procedures/
+- Neo4j CDC with GCP Pub/Sub: https://neo4j.com/blog/graph-database/seamless-data-pipeline-neo4j-and-google-cloud-pub-sub/
+- Neo4j vector indexes: https://neo4j.com/docs/cypher-manual/current/indexes/semantic-indexes/vector-indexes/
+- Fast batched graph updates with Neo4j: https://medium.com/neo4j/5-tips-tricks-for-fast-batched-updates-of-graph-structures-with-neo4j-and-cypher-73c7f693c8cc
+- Graph RAG in production: https://www.paperclipped.de/en/blog/graph-rag-production/
+
+### Vector and database alternatives
+
+- pgvector: https://github.com/pgvector/pgvector
+- Pinecone docs: https://docs.pinecone.io/
+- Chroma embedding functions: https://docs.trychroma.com/docs/embeddings/embedding-functions
+- Chroma index reference: https://docs.trychroma.com/cloud/schema/index-reference
+- Qdrant overview: https://qdrant.tech/documentation/overview/what-is-qdrant/
+- Qdrant search: https://qdrant.tech/documentation/search/
+### Storage
+
+- Cloudflare R2 pricing: https://developers.cloudflare.com/r2/pricing/
+- Amazon S3 pricing: https://aws.amazon.com/s3/pricing/
+
+### Evaluation and monitoring
+
+- Building a golden dataset for AI evaluation: https://www.getmaxim.ai/articles/building-a-golden-dataset-for-ai-evaluation-a-step-by-step-guide/
+- LLM-as-judge best practices: https://www.montecarlodata.com/blog-llm-as-judge/
+- Google Cloud agent evaluation methodology: https://cloud.google.com/blog/topics/developers-practitioners/a-methodical-approach-to-agent-evaluation
+- LLM evaluation at Booking.com: https://booking.ai/llm-evaluation-practical-tips-at-booking-com-1b038a0d6662
 
 ## License
 
-MIT
-
----
-
-*Built by Homen Shum with Claude Code — April 2026*
+Internal interview prototype unless otherwise noted.
