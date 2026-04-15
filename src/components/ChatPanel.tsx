@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import { useAction, useMutation, useQuery } from "convex/react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -765,6 +766,7 @@ function buildRegionalGreeting(
 }
 
 export function ChatPanel({ operatorId, storeId, regionId, issueContext, onClearIssue, operatorName, sharedSessionId, embedded }: ChatPanelProps) {
+  const chatPagePathname = usePathname();
   const scopeKey = storeId || regionId || "global";
   const [input, setInput] = useState("");
   const [files, setFiles] = useState<File[]>([]);
@@ -970,6 +972,9 @@ export function ChatPanel({ operatorId, storeId, regionId, issueContext, onClear
       setLoading(false);
     }
   };
+
+  // Hide on /chat page — GroupChat component handles that route
+  if (chatPagePathname === "/chat") return null;
 
   return (
     <>
