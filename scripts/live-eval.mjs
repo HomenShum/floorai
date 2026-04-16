@@ -82,6 +82,7 @@ async function main() {
       query: testCase.query,
       storeId: testCase.storeId,
       regionId: testCase.regionId,
+      operatorId: testCase.operatorId || "OP-SM-001",
       sessionId,
     });
 

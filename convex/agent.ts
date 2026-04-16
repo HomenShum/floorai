@@ -2042,11 +2042,14 @@ ${assistantMessage}`;
             answer_packet_id: answerPacketId,
           },
         };
-        fetch("https://attrition-7xtb75zi5q-uc.a.run.app/api/retention/push-packet", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(attritionPacket),
-        }).catch(() => {}); // silent — never block the agent
+        await Promise.race([
+          fetch("https://attrition-7xtb75zi5q-uc.a.run.app/api/retention/push-packet", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(attritionPacket),
+          }),
+          new Promise((resolve) => setTimeout(resolve, 5000)),
+        ]).catch(() => {});
       } catch { /* attrition telemetry is best-effort */ }
       // ── end attrition push ──────────────────────────────────────────────
 
