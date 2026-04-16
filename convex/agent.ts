@@ -1980,6 +1980,76 @@ ${assistantMessage}`;
         answerPacketId,
         qualityStatus: qualityReport.status,
       });
+
+      // ── attrition.sh: push real cost telemetry (fire-and-forget) ────────
+      try {
+        const planTelemetry = plannerResult.telemetry ?? {};
+        const planTokensIn = planTelemetry.tokensIn ?? 0;
+        const planTokensOut = planTelemetry.tokensOut ?? 0;
+        const mainTokensIn = modelTurns.reduce((s: number, t: any) => s + (t.tokensIn ?? 0), 0);
+        const mainTokensOut = modelTurns.reduce((s: number, t: any) => s + (t.tokensOut ?? 0), 0);
+        const fallbackIn = fallbackTelemetry?.tokensIn ?? 0;
+        const fallbackOut = fallbackTelemetry?.tokensOut ?? 0;
+
+        // Gemini pricing: Flash Lite $0.075/$0.30, Pro $1.25/$5.00 per M tokens
+        const plannerCost = (planTokensIn / 1e6) * 0.075 + (planTokensOut / 1e6) * 0.30;
+        const mainCost = (mainTokensIn / 1e6) * 1.25 + (mainTokensOut / 1e6) * 5.00;
+        const fallbackCost = (fallbackIn / 1e6) * 1.25 + (fallbackOut / 1e6) * 5.00;
+
+        const attritionPacket = {
+          type: "advisor.session",
+          subject: `FloorAI: ${(args.query ?? "").substring(0, 80)}`,
+          summary: `Pro: ${mainTokensIn + mainTokensOut} tok ($${(mainCost).toFixed(6)}), Flash: ${planTokensIn + planTokensOut} tok ($${(plannerCost).toFixed(6)})`,
+          data: {
+            session_id: args.sessionId,
+            started_at: new Date(Date.now() - (tracePayload.execution?.totalDurationMs ?? 0)).toISOString(),
+            ended_at: new Date().toISOString(),
+            duration_ms: tracePayload.execution?.totalDurationMs ?? 0,
+            executor_model: PLANNER_MODEL_NAME,
+            advisor_model: MODEL_NAME,
+            executor_stats: {
+              total_tokens: planTokensIn + planTokensOut,
+              total_cost_usd: plannerCost,
+              calls: 1,
+              self_sufficient_pct: 0,
+            },
+            advisor_stats: {
+              total_tokens: mainTokensIn + mainTokensOut + fallbackIn + fallbackOut,
+              total_cost_usd: mainCost + fallbackCost,
+              calls: modelTurns.length,
+              escalation_triggers: ["all_queries_use_pro"],
+              advice_types: ["agent_response"],
+            },
+            combined: {
+              total_cost_usd: plannerCost + mainCost + fallbackCost,
+              advisor_cost_share_pct: mainCost + fallbackCost > 0
+                ? Math.round(((mainCost + fallbackCost) / (plannerCost + mainCost + fallbackCost)) * 1000) / 10
+                : 0,
+              escalation_rate_pct: 100, // every query goes to Pro
+              user_corrections: 0,
+              task_completed: true,
+            },
+            // FloorAI-specific context
+            app: "floorai",
+            store_id: args.storeId ?? null,
+            region_id: args.regionId ?? null,
+            operator_id: args.operatorId,
+            query: (args.query ?? "").substring(0, 200),
+            quality_status: qualityReport.status,
+            plan_steps: plannerResult.plan.length,
+            tool_calls: toolTrace.length,
+            sources_cited: sourceUrls.size,
+            answer_packet_id: answerPacketId,
+          },
+        };
+        fetch("https://attrition-7xtb75zi5q-uc.a.run.app/api/retention/push-packet", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(attritionPacket),
+        }).catch(() => {}); // silent — never block the agent
+      } catch { /* attrition telemetry is best-effort */ }
+      // ── end attrition push ──────────────────────────────────────────────
+
       await syncDraft({
         content: finalAnswer,
         status: "completed",
