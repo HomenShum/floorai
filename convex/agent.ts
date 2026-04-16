@@ -2005,27 +2005,33 @@ ${assistantMessage}`;
             started_at: new Date(Date.now() - (tracePayload.execution?.totalDurationMs ?? 0)).toISOString(),
             ended_at: new Date().toISOString(),
             duration_ms: tracePayload.execution?.totalDurationMs ?? 0,
-            executor_model: PLANNER_MODEL_NAME,
-            advisor_model: MODEL_NAME,
-            executor_stats: {
+            // Correct roles per Anthropic advisor pattern:
+            // - Expensive model (Pro) = ADVISOR (plans, reasons, guides)
+            // - Cheap model (Flash) = EXECUTOR (calls tools, produces output)
+            // FloorAI currently inverts this: Flash plans, Pro executes everything.
+            // The optimization opportunity: route simple queries to Flash as executor
+            // and only escalate to Pro as advisor for complex reasoning.
+            planner_model: PLANNER_MODEL_NAME,
+            agent_model: MODEL_NAME,
+            planner_stats: {
               total_tokens: planTokensIn + planTokensOut,
               total_cost_usd: plannerCost,
               calls: 1,
-              self_sufficient_pct: 0,
+              role: "planner",
             },
-            advisor_stats: {
+            agent_stats: {
               total_tokens: mainTokensIn + mainTokensOut + fallbackIn + fallbackOut,
               total_cost_usd: mainCost + fallbackCost,
               calls: modelTurns.length,
-              escalation_triggers: ["all_queries_use_pro"],
-              advice_types: ["agent_response"],
+              role: "executor_and_reasoner",
             },
             combined: {
               total_cost_usd: plannerCost + mainCost + fallbackCost,
-              advisor_cost_share_pct: mainCost + fallbackCost > 0
+              pro_cost_share_pct: mainCost + fallbackCost > 0
                 ? Math.round(((mainCost + fallbackCost) / (plannerCost + mainCost + fallbackCost)) * 1000) / 10
                 : 0,
-              escalation_rate_pct: 100, // every query goes to Pro
+              pattern: "inverted",  // Flash plans, Pro executes — opposite of Anthropic advisor pattern
+              optimization: "Route simple queries (policy lookup, issue status) to Flash as full executor. Reserve Pro for complex reasoning (multi-step action plans, cross-store analysis).",
               user_corrections: 0,
               task_completed: true,
             },
