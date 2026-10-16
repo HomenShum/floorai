@@ -40,7 +40,7 @@ Only ship after the evaluation harness passes or any blocked live-eval dependenc
 
 ## Golden Dataset Policy
 
-- The canonical evaluation set lives in [data/golden_dataset.json](/d:/VSCode%20Projects/perficient_interview/data/golden_dataset.json).
+- The canonical evaluation set lives in [data/golden_dataset.json](data/golden_dataset.json).
 - Every agent change should be checked against the preferred-response goldens before merge.
 - The judge should evaluate factual alignment, policy grounding, actionability, and required reference coverage.
 - Golden examples are curated synthetic references for prototype evaluation only.
