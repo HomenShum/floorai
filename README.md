@@ -7,6 +7,7 @@ This repo is the working prototype and interview artifact for a retail operation
 Related docs:
 - [PLAN.md](PLAN.md)
 - [INTERVIEW_WALKTHROUGH.md](INTERVIEW_WALKTHROUGH.md)
+- [README setup history](CHANGELOG/docs/readme.md)
 
 ## What Shipped
 
@@ -975,19 +976,27 @@ WORKSTYLE
    npm install
    ```
 
-2. Set the Gemini key in Convex.
+2. Point the frontend at your Convex deployment.
+
+   Set `NEXT_PUBLIC_CONVEX_URL` in `.env.local` to the deployment you intend to use.
+   [ConvexClientProvider](src/components/ConvexClientProvider.tsx) reads this value
+   before rendering the application. When it is missing, it renders
+   "Convex is not configured." instead of the workspaces. Setting the backend
+   Gemini key alone does not configure this frontend connection.
+
+3. Set the Gemini key in the same Convex deployment.
 
    ```bash
    npx convex env set GOOGLE_API_KEY your_key_here
    ```
 
-3. Start local development.
+4. Start local development.
 
    ```bash
    npm run dev
    ```
 
-4. Seed the synthetic data.
+5. Seed the synthetic data.
 
    ```bash
    npm run seed
